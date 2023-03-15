@@ -22,10 +22,15 @@ It will start the script and it also includes a progress bar.
 
 # Output
 TV show 'name' not found in TMDb API
+
 Missing episodes
+
 Shows not found in TMDb API
+
 All shows were found in TMDb API
+
 Episode name - Season num - Episode num - episode title
+
 
 # Plex Media Server
 https://plex.tv
