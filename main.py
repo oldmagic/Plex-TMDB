@@ -8,6 +8,9 @@ plex_baseurl = 'http://127.0.0.1:32400'
 plex_token = '******'
 plex = PlexServer(plex_baseurl, plex_token)
 
+#TMDB API
+api_key = '******'
+
 # Fetch the TV show list from your Plex server
 tv_episodes = {}
 for show in plex.library.section('TV-serier').all():
@@ -24,7 +27,6 @@ for show in plex.library.section('TV-serier').all():
         })
 
 # Read the episode list from the TMDb API
-api_key = '******'
 missing_episodes = []
 search_url = 'https://api.themoviedb.org/3/search/tv'
 not_found_shows = []  # A list of shows that were not found in the TMDb API
