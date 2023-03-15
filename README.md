@@ -8,8 +8,11 @@ If you feel like you can update it make a pull request.
 There are a few variables that needs to be changes:
 
 plex_baseurl = 'http://127.0.0.1:32400'
+
 plex_token = '******'
+
 api_key = '******' <- This is the API key from TMDB.
+
 
 # RUN
 After altering the variables to your needs simply run the script by typing:
