@@ -1,0 +1,27 @@
+[
+    {
+        "show": "How to Become a Mob Boss (2023)",
+        "//": "hide show //"
+    },
+    {
+        "show": "Dalgliesh (2021)",
+        "//": "hide season 1 //",                      "episodes": [ -1 ]
+    },
+    {
+        "show": "Black Mirror (2011)",
+        "//": "hide season 4 //",                      "episodes": [ -4 ]
+    },
+    {
+        "show": "Guillermo del Toro's Cabinet of Curiosities (2022)",
+        "//": "hide season 1 episodes 1 and 2 //",     "episodes": [ -1, 1, 2 ]
+    },
+    {
+        "show": "The Chief (2025)",
+        "//": "hide season 1 //",                      "episodes": [ -1 ]
+    },
+    {
+        "show": "Inside No. 9 (2014)",
+        "//": "hide season 6 episode 1 //",            "episodes": [ -6, 1 ]
+    }
+
+]
