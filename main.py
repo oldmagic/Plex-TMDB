@@ -8,8 +8,9 @@ from plexapi.server import PlexServer
 from tqdm import tqdm
 from colorama import init, Fore, Style
 from urllib.parse import quote
-from datetime import datetime
+from datetime import datetime, timedelta
 import argparse
+import json
 
 # Initialize colorama for cross-platform terminal colors
 init()
@@ -18,14 +19,19 @@ init()
 PLEX_BASEURL = '****'
 PLEX_TOKEN = '****'
 TMDB_API_KEY = '****'
-CACHE_DIR = Path("./cache")
+CACHE_DIR = Path("./.tmdb_cache")
 CACHE_EXPIRY = 86400  # 24 hours in seconds
 ALT_MISSING_CHECK_METHOD = False
 IGNORE_MISSING_SEASON_IN_TMDB = False
 HIDE_UNAIRED_EPISODES = False
+AIR_DATE_OFFSET_DAYS=0
+FILTERS_FILE=None
 
 # Create cache directory if it doesn't exist
 CACHE_DIR.mkdir(exist_ok=True)
+
+showFilters=None
+
 
 def get_cached_response(cache_file, url, params=None):
     """Get response from cache or from API with caching"""
@@ -89,8 +95,6 @@ def get_tmdb_show_id(show_name):
     clean_name, year = extract_year_from_title(show_name)
     unquoted_clear_name = clean_name
     clean_name = quote(clean_name)
-
-    #print(f"get_tmdb_show_id: {clean_name}, {year}")
     
     # Create a unique cache key including year if available
     cache_key = f"{clean_name}_{year}" if year else clean_name
@@ -185,7 +189,7 @@ def display_missing_episodes(missing_episodes):
     colors = [Fore.CYAN, Fore.MAGENTA, Fore.BLUE, Fore.GREEN, Fore.YELLOW, Fore.RED]
     
     # store curr dt
-    run_dt = datetime.now()
+    chk_dt = datetime.now() + timedelta(days=-AIR_DATE_OFFSET_DAYS)
 
     # Display missing episodes grouped by show with alternating colors
     for i, (show_name, episodes) in enumerate(episodes_by_show.items()):
@@ -199,7 +203,11 @@ def display_missing_episodes(missing_episodes):
 
         # Display each missing episode
         for episode in episodes:
-            aired = (episode['air_dt'] == None) or (episode['air_dt'] < run_dt)
+            season_num = episode['season_num']
+            episode_num = episode['episode_num']
+
+            air_dt = episode['air_dt']
+            aired = (air_dt == None) or (air_dt < chk_dt)
             if (not HIDE_UNAIRED_EPISODES) or aired:
                 if not header_shown:
                     # Add a blank line before each show (except the first one)
@@ -210,13 +218,13 @@ def display_missing_episodes(missing_episodes):
                     header_shown = True
 
                 if aired:
-                    print(f"  {color}Season {episode['season_num']}, "
-                        f"Episode {episode['episode_num']}: "
+                    print(f"  {color}Season {season_num}, "
+                        f"Episode {episode_num}: "
                         f"{episode['title']}{Style.RESET_ALL}")
                 else:
-                    print(f"  {episode['season_num']}, "
-                        f"Episode {episode['episode_num']}: "
-                        f"{episode['title']} [Airs {episode['air_dt'].strftime('%d %B, %Y')}]")
+                    print(f"  Season {season_num}, "
+                        f"Episode {episode_num}: "
+                        f"{episode['title']} [Airs {episode['air_dt'].strftime('%d %B, %Y').lstrip('0')}]")
 
 def display_not_found_shows(not_found_shows):
     """Display shows not found in TMDB with colored output"""
@@ -227,6 +235,52 @@ def display_not_found_shows(not_found_shows):
     print(f"\n{Fore.RED}===== SHOWS NOT FOUND IN TMDB ====={Style.RESET_ALL}")
     for show_name in not_found_shows:
         print(f"{Fore.RED}{show_name}{Style.RESET_ALL}")
+
+
+def findFilteredShow(showName):
+    if showFilters != None:
+        for show in showFilters:
+            if show['show'] == showName:
+                return show;
+    return None
+
+
+def isEpisodeFiltered(showFilter, seasonNum, episodeNum):
+    if showFilter == None:
+        return False
+    try:
+        eps = showFilter["episodes"]
+    except:
+        # no episodes listed for show - hide all
+        return True
+    # negative value is season number in json
+    try:
+        # iterate episode filters starting after queried season
+        lpd = False
+        for ep in eps[eps.index(-seasonNum) + 1:]:
+            # (positive) episode number
+            # ...matches query?
+            if ep == episodeNum:
+                # yep, so hide it
+                return True
+            # different season number?
+            if ep < 0:
+                # ...immediately after queried season number?
+                if not lpd:
+                    # yep - hide entire season
+                    return True
+                # no, but season is now different, so don't hide
+                return False
+            lpd = True
+        return not lpd # hide if single season number in array
+    except:
+        # season not found in filters
+        return False
+
+
+def isSeasonFiltered(showFilter, seasonNum):
+    return isEpisodeFiltered(showFilter, seasonNum, 0)
+
 
 def main():
     # Fetch all episodes from Plex
@@ -251,6 +305,13 @@ def main():
                 pbar.update(1)
                 continue
             
+            # check if show hidden by filter
+            show_filter = findFilteredShow(show_name)
+            if show_filter != None:
+                if not "episodes" in show_filter:
+                    # no episodes listed, so hide all
+                    continue
+                        
             # Get show info with seasons
             show_info = get_tmdb_show_info(show_id)
             tmdb_name = show_info['name']
@@ -264,12 +325,20 @@ def main():
                 if season_num == 0:
                     continue
 
+                # check if season hidden by filter                
+                if isSeasonFiltered(show_filter, season_num):
+                    continue;
+
                 if season_num not in tmdb_seasons:
                     # Entire season missing in TMDB
                     if IGNORE_MISSING_SEASON_IN_TMDB == False:
                         print(f"{Fore.RED} Season {season_num} not found on TMDB: {show_name} [{show_id}]{Style.RESET_ALL}")
 
                         for episode_num, episode_data in episodes.items():
+                            # check if episode hidden by filter                
+                            if isEpisodeFiltered(show_filter, season_num, episode_num):
+                                continue;
+
                             missing_episodes.append({
                                 'show_name': show_name,
                                 'season_num': season_num,
@@ -285,6 +354,10 @@ def main():
                     if ALT_MISSING_CHECK_METHOD == False:
                         for episode_num, episode_data in episodes.items():
                             if episode_num not in tmdb_episodes:
+                                # check if episode hidden by filter                
+                                if isEpisodeFiltered(show_filter, season_num, episode_num):
+                                    continue;
+                                
                                 tmdb_episode_data = tmdb_episodes_data[episode_num-1]
                                 missing_episodes.append({
                                     'show_name': show_name,
@@ -297,6 +370,10 @@ def main():
                         # invert the missing episode check logic
                         for episode_num in tmdb_episodes:
                             if episode_num not in episodes:
+                                # check if episode hidden by filter                
+                                if isEpisodeFiltered(show_filter, season_num, episode_num):
+                                    continue;
+
                                 tmdb_episode_data = tmdb_episodes_data[episode_num-1]
                                 missing_episodes.append({
                                     'show_name': show_name,
@@ -313,6 +390,7 @@ def main():
     display_not_found_shows(not_found_shows)
 
 if __name__ == "__main__":
+    # parse command line arguments
     parser = argparse.ArgumentParser(
                         prog='Plex-TMDB',
                         description='Plex Media Server Python Script that scans for missing episodes and checks it via TMDB',
@@ -323,6 +401,8 @@ if __name__ == "__main__":
     parser.add_argument('-a', '--alt_missing_check_method', action='store_true')
     parser.add_argument('-i', '--ignore_missing_season_in_tmdb', action='store_true')
     parser.add_argument('-x', '--hide_unaired_episodes', action='store_true')
+    parser.add_argument('-d', '--air_date_offset_days', type=int, default=AIR_DATE_OFFSET_DAYS)
+    parser.add_argument('-f', '--filters_file', type=str, default=FILTERS_FILE)
     args = parser.parse_args()
     PLEX_BASEURL = args.plex_baseurl
     PLEX_TOKEN = args.plex_token
@@ -330,6 +410,13 @@ if __name__ == "__main__":
     ALT_MISSING_CHECK_METHOD = args.alt_missing_check_method
     IGNORE_MISSING_SEASON_IN_TMDB = args.ignore_missing_season_in_tmdb
     HIDE_UNAIRED_EPISODES = args.hide_unaired_episodes
+    AIR_DATE_OFFSET_DAYS = args.air_date_offset_days
+    FILTERS_FILE = args.filters_file
+
+    # load filters json
+    if FILTERS_FILE != None:
+        with open(FILTERS_FILE) as f:
+            showFilters = json.load(f)
 
     # Use a persistent session for all requests
     with requests.Session() as session:
