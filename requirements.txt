@@ -14,7 +14,7 @@ requests==2.32.4
 urllib3==2.5.0
 
 # Image processing (for poster/backdrop handling)
-Pillow==10.3.0
+Pillow==11.3.0
 
 # Date and time handling
 python-dateutil==2.8.2
@@ -24,7 +24,7 @@ python-dotenv==1.0.0
 
 # Console output and logging
 colorama==0.4.6
-tqdm==4.66.3
+tqdm==4.67.1
 
 # JSON handling and validation
 jsonschema==4.19.2
@@ -56,5 +56,5 @@ loguru==0.7.2
 # Development and testing dependencies (optional)
 pytest==7.4.3
 pytest-cov==4.1.0
-black==24.3.0
+black==25.1.0
 flake8==6.1.0
