@@ -1,0 +1,60 @@
+# Web Framework
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# Database
+SQLAlchemy==2.0.23
+Flask-SQLAlchemy==3.0.5
+
+# Plex API
+PlexAPI==4.15.4
+
+# HTTP requests and API calls
+requests==2.31.0
+urllib3==2.0.7
+
+# Image processing (for poster/backdrop handling)
+Pillow==10.0.1
+
+# Date and time handling
+python-dateutil==2.8.2
+
+# Configuration and environment
+python-dotenv==1.0.0
+
+# Console output and logging
+colorama==0.4.6
+tqdm==4.66.1
+
+# JSON handling and validation
+jsonschema==4.19.2
+
+# Enhanced HTTP client
+httpx==0.25.2
+
+# Time zone handling
+pytz==2023.3
+
+# Enhanced console output
+rich==13.7.0
+
+# Security and cryptography
+cryptography==41.0.7
+
+# File path handling (Python < 3.4 compatibility)
+pathlib2==2.3.7.post1
+
+# Configuration file parsing
+configparser==6.0.0
+
+# Progress bars for CLI (optional)
+alive-progress==3.1.5
+
+# Enhanced logging (optional)
+loguru==0.7.2
+
+# Development and testing dependencies (optional)
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.11.0
+flake8==6.1.0
