@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card status-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-database me-2"></i>Database Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4" id="statsContainer">
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-primary" id="showsCount">0</h3>
+                        <small class="text-muted">Shows</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-success" id="episodesCount">0</h3>
+                        <small class="text-muted">Episodes</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-warning" id="missingCount">0</h3>
+                        <small class="text-muted">Missing Episodes</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-info" id="runsCount">0</h3>
+                        <small class="text-muted">Detection Runs</small>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h5 class="text-success" id="apiCallsSaved">0</h5>
+                                <small class="text-muted">Total API Calls Saved</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <h6>Latest Detection Run</h6>
+                                <div id="latestRunInfo" class="text-muted">
+                                    No runs yet
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-info" id="refreshStatsBtn">
+                        <i class="fas fa-refresh me-2"></i>Refresh Stats
+                    </button>
+                    <button class="btn btn-danger" id="clearDatabaseBtn">
+                        <i class="fas fa-trash me-2"></i>Clear Database
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card status-card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Database Benefits
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="fas fa-tachometer-alt me-2 text-success"></i>Performance</h6>
+                    <p class="small text-muted">
+                        Cached episode data reduces detection time and prevents API rate limiting.
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <h6><i class="fas fa-history me-2 text-info"></i>History</h6>
+                    <p class="small text-muted">
+                        Track detection runs and see how your missing episodes change over time.
+                    </p>
+                </div>
+                <div class="mb-3">
+                    <h6><i class="fas fa-shield-alt me-2 text-primary"></i>Rate Limiting</h6>
+                    <p class="small text-muted">
+                        Reduces TMDB API calls by caching show and episode data for 7 days.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    loadDatabaseStats();
+    
+    $('#refreshStatsBtn').on('click', function() {
+        loadDatabaseStats();
+    });
+    
+    $('#clearDatabaseBtn').on('click', function() {
+        if (confirm('Are you sure you want to clear the entire database? This cannot be undone and will remove all cached show data and detection history.')) {
+            clearDatabase();
+        }
+    });
+    
+    function loadDatabaseStats() {
+        setButtonLoading('#refreshStatsBtn', true);
+        
+        $.ajax({
+            url: '/api/database_stats',
+            method: 'GET',
+            success: function(response) {
+                setButtonLoading('#refreshStatsBtn', false);
+                
+                if (response.success) {
+                    const stats = response.stats;
+                    
+                    $('#showsCount').text(stats.shows_count || 0);
+                    $('#episodesCount').text(stats.episodes_count || 0);
+                    $('#missingCount').text(stats.missing_episodes_count || 0);
+                    $('#runsCount').text(stats.detection_runs_count || 0);
+                    $('#apiCallsSaved').text(stats.api_calls_saved || 0);
+                    
+                    if (stats.latest_run) {
+                        const run = stats.latest_run;
+                        const startTime = new Date(run.started_at).toLocaleString();
+                        $('#latestRunInfo').html(`
+                            <strong>Status:</strong> ${run.status}<br>
+                            <strong>Started:</strong> ${startTime}<br>
+                            <strong>Shows:</strong> ${run.total_shows_processed}<br>
+                            <strong>Missing:</strong> ${run.total_missing_episodes}
+                        `);
+                    }
+                } else {
+                    showAlert('Error loading database stats: ' + response.message, 'danger');
+                }
+            },
+            error: function() {
+                setButtonLoading('#refreshStatsBtn', false);
+                showAlert('Error loading database stats', 'danger');
+            }
+        });
+    }
+    
+    function clearDatabase() {
+        setButtonLoading('#clearDatabaseBtn', true);
+        
+        $.ajax({
+            url: '/api/clear_database',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({confirm: true}),
+            success: function(response) {
+                setButtonLoading('#clearDatabaseBtn', false);
+                
+                if (response.success) {
+                    showAlert('Database cleared successfully!', 'success');
+                    loadDatabaseStats();
+                } else {
+                    showAlert('Error clearing database: ' + response.message, 'danger');
+                }
+            },
+            error: function() {
+                setButtonLoading('#clearDatabaseBtn', false);
+                showAlert('Error clearing database', 'danger');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
