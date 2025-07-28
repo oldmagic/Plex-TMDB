@@ -1,0 +1,644 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card status-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cog me-2"></i>Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="configForm">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary">
+                                <i class="fas fa-server me-2"></i>Plex Server Settings
+                            </h6>
+                            <hr>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Server URL</label>
+                            <input type="text" class="form-control" id="plexUrl" name="plexUrl" 
+                                   placeholder="http://localhost:32400" required>
+                            <div class="form-text">Include http:// or https://</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Token</label>
+                            <input type="password" class="form-control" id="plexToken" name="plexToken" 
+                                   placeholder="Your Plex token" required>
+                            <div class="form-text">Your Plex authentication token</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary">
+                                <i class="fas fa-film me-2"></i>TMDB Settings
+                            </h6>
+                            <hr>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">API Key</label>
+                            <input type="password" class="form-control" id="tmdbApiKey" name="tmdbApiKey" 
+                                   placeholder="Your TMDB API key" required>
+                            <div class="form-text">Your TMDB v3 API key</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Language</label>
+                            <select class="form-select" id="tmdbLanguage" name="tmdbLanguage">
+                                <option value="en-US">English (US)</option>
+                                <option value="en-GB">English (UK)</option>
+                                <option value="es-ES">Spanish (Spain)</option>
+                                <option value="es-MX">Spanish (Mexico)</option>
+                                <option value="fr-FR">French (France)</option>
+                                <option value="de-DE">German (Germany)</option>
+                                <option value="it-IT">Italian (Italy)</option>
+                                <option value="pt-BR">Portuguese (Brazil)</option>
+                                <option value="ja-JP">Japanese (Japan)</option>
+                                <option value="ko-KR">Korean (South Korea)</option>
+                                <option value="zh-CN">Chinese (Simplified)</option>
+                                <option value="ru-RU">Russian (Russia)</option>
+                            </select>
+                            <div class="form-text">Language for metadata and search</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary">
+                                <i class="fas fa-search me-2"></i>TMDB Test Search
+                            </h6>
+                            <hr>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Test Query</label>
+                            <input type="text" class="form-control" id="testQuery" placeholder="The Matrix" value="The Matrix">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Media Type</label>
+                            <select class="form-select" id="testMediaType">
+                                <option value="movie">Movie</option>
+                                <option value="tv">TV Show</option>
+                                <option value="multi">Both</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Test Actions</label><br>
+                            <button type="button" class="btn btn-sm btn-outline-info" id="testSearchBtn">
+                                <i class="fas fa-search me-1"></i>Test Search
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary">
+                                <i class="fas fa-sliders-h me-2"></i>Sync Options
+                            </h6>
+                            <hr>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="updatePosters" name="updatePosters" checked>
+                                <label class="form-check-label" for="updatePosters">
+                                    <i class="fas fa-image me-1"></i>Update Posters
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="updateBackdrops" name="updateBackdrops" checked>
+                                <label class="form-check-label" for="updateBackdrops">
+                                    <i class="fas fa-panorama me-1"></i>Update Backdrops
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="updateMetadata" name="updateMetadata" checked>
+                                <label class="form-check-label" for="updateMetadata">
+                                    <i class="fas fa-info-circle me-1"></i>Update Metadata
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="updateRatings" name="updateRatings" checked>
+                                <label class="form-check-label" for="updateRatings">
+                                    <i class="fas fa-star me-1"></i>Update Ratings
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Configuration
+                        </button>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary" id="testPlexBtn">
+                                <i class="fas fa-server me-2"></i>Test Plex
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="testTmdbBtn">
+                                <i class="fas fa-film me-2"></i>Test TMDB
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="testBothBtn">
+                                <i class="fas fa-plug me-2"></i>Test Both
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Connection Test Results -->
+                <div id="testResults" class="mt-4" style="display: none;">
+                    <h6><i class="fas fa-clipboard-check me-2"></i>Connection Test Results</h6>
+                    <div id="testResultsContent" class="test-results"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card status-card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Connection Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="connection-status">
+                        <strong>Plex Server:</strong>
+                        <span id="plexStatus" class="badge bg-secondary">Not Tested</span>
+                    </div>
+                    <div id="plexDetails" class="connection-details"></div>
+                </div>
+                <div class="mb-3">
+                    <div class="connection-status">
+                        <strong>TMDB API:</strong>
+                        <span id="tmdbStatus" class="badge bg-secondary">Not Tested</span>
+                    </div>
+                    <div id="tmdbDetails" class="connection-details"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card status-card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-question-circle me-2"></i>Help & Documentation
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="helpAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="plexTokenHelp">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapseToken" aria-expanded="false">
+                                Getting your Plex Token
+                            </button>
+                        </h2>
+                        <div id="collapseToken" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body small">
+                                <ol>
+                                    <li>Sign in to your Plex account on the web</li>
+                                    <li>Open any media item</li>
+                                    <li>Click "Get Info" → "View XML"</li>
+                                    <li>Look for the "X-Plex-Token" parameter in the URL</li>
+                                </ol>
+                                <p class="mt-2">
+                                    <strong>Alternative:</strong> Check your browser's developer tools 
+                                    Network tab when loading Plex web.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="tmdbApiHelp">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapseTmdb" aria-expanded="false">
+                                Getting TMDB API Key
+                            </button>
+                        </h2>
+                        <div id="collapseTmdb" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body small">
+                                <ol>
+                                    <li>Create an account at <a href="https://www.themoviedb.org/" target="_blank">TMDB</a></li>
+                                    <li>Go to Settings → API in your account</li>
+                                    <li>Request an API key (choose "Developer")</li>
+                                    <li>Fill out the application form</li>
+                                    <li>Use the "API Key (v3 auth)" value</li>
+                                </ol>
+                                <p class="mt-2">
+                                    <strong>Note:</strong> The API key usually takes a few minutes to activate.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="troubleshootHelp">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapseTroubleshoot" aria-expanded="false">
+                                Troubleshooting
+                            </button>
+                        </h2>
+                        <div id="collapseTroubleshoot" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body small">
+                                <h6>Common Issues:</h6>
+                                <ul>
+                                    <li><strong>Plex "Unauthorized":</strong> Check your token is correct and hasn't expired</li>
+                                    <li><strong>Plex "Connection Error":</strong> Ensure the URL is correct and server is running</li>
+                                    <li><strong>TMDB "Unauthorized":</strong> Verify your API key is active and correct</li>
+                                    <li><strong>Slow responses:</strong> Check your internet connection and server performance</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Load existing configuration
+    loadConfig();
+    
+    $('#configForm').on('submit', function(e) {
+        e.preventDefault();
+        saveConfig();
+    });
+    
+    $('#testPlexBtn').on('click', function() {
+        testPlexConnection();
+    });
+    
+    $('#testTmdbBtn').on('click', function() {
+        testTmdbConnection();
+    });
+    
+    $('#testBothBtn').on('click', function() {
+        testBothConnections();
+    });
+    
+    $('#testSearchBtn').on('click', function() {
+        testTmdbSearch();
+    });
+    
+    function loadConfig() {
+        $.ajax({
+            url: '/api/load_config',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.config) {
+                    const config = response.config;
+                    $('#plexUrl').val(config.plexUrl || '');
+                    $('#plexToken').val(config.plexToken || '');
+                    $('#tmdbApiKey').val(config.tmdbApiKey || '');
+                    $('#tmdbLanguage').val(config.tmdbLanguage || 'en-US');
+                    $('#updatePosters').prop('checked', config.updatePosters !== false);
+                    $('#updateBackdrops').prop('checked', config.updateBackdrops !== false);
+                    $('#updateMetadata').prop('checked', config.updateMetadata !== false);
+                    $('#updateRatings').prop('checked', config.updateRatings !== false);
+                }
+            },
+            error: function() {
+                showAlert('Failed to load configuration', 'warning');
+            }
+        });
+    }
+    
+    function saveConfig() {
+        const config = {
+            plexUrl: $('#plexUrl').val().trim(),
+            plexToken: $('#plexToken').val().trim(),
+            tmdbApiKey: $('#tmdbApiKey').val().trim(),
+            tmdbLanguage: $('#tmdbLanguage').val(),
+            updatePosters: $('#updatePosters').is(':checked'),
+            updateBackdrops: $('#updateBackdrops').is(':checked'),
+            updateMetadata: $('#updateMetadata').is(':checked'),
+            updateRatings: $('#updateRatings').is(':checked')
+        };
+        
+        // Validate required fields
+        if (!config.plexUrl || !config.plexToken || !config.tmdbApiKey) {
+            showAlert('Please fill in all required fields (Plex URL, Token, and TMDB API Key)', 'warning');
+            return;
+        }
+        
+        setButtonLoading('#configForm button[type="submit"]', true);
+        
+        $.ajax({
+            url: '/api/save_config',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(config),
+            success: function(response) {
+                setButtonLoading('#configForm button[type="submit"]', false);
+                
+                if (response.success) {
+                    showAlert('Configuration saved successfully!', 'success');
+                } else {
+                    showAlert('Error saving configuration: ' + response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#configForm button[type="submit"]', false);
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                showAlert('Error saving configuration: ' + errorMsg, 'danger');
+            }
+        });
+    }
+    
+    function testPlexConnection() {
+        const plexUrl = $('#plexUrl').val().trim();
+        const plexToken = $('#plexToken').val().trim();
+        
+        if (!plexUrl || !plexToken) {
+            showAlert('Please enter Plex URL and Token before testing', 'warning');
+            return;
+        }
+        
+        setButtonLoading('#testPlexBtn', true);
+        $('#plexStatus').removeClass().addClass('badge bg-warning').text('Testing...');
+        
+        $.ajax({
+            url: '/api/test_plex_connection',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                plexUrl: plexUrl,
+                plexToken: plexToken
+            }),
+            success: function(response) {
+                setButtonLoading('#testPlexBtn', false);
+                
+                if (response.success) {
+                    $('#plexStatus').removeClass().addClass('badge bg-success').text('Connected');
+                    $('#plexDetails').html(`
+                        <strong>${response.serverInfo.friendlyName}</strong><br>
+                        <small>Version: ${response.serverInfo.version}<br>
+                        Platform: ${response.serverInfo.platform}<br>
+                        Libraries: ${response.libraries.length}<br>
+                        Response: ${response.connectionTime}ms</small>
+                    `);
+                    
+                    showTestResults('Plex Connection Test', response, 'success');
+                    showAlert('Plex connection successful!', 'success');
+                } else {
+                    $('#plexStatus').removeClass().addClass('badge bg-danger').text('Failed');
+                    $('#plexDetails').html(`<small class="text-danger">${response.message}</small>`);
+                    
+                    showTestResults('Plex Connection Test', response, 'danger');
+                    showAlert('Plex connection failed: ' + response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#testPlexBtn', false);
+                $('#plexStatus').removeClass().addClass('badge bg-danger').text('Error');
+                
+                const errorMsg = xhr.responseJSON?.message || 'Request failed';
+                $('#plexDetails').html(`<small class="text-danger">${errorMsg}</small>`);
+                showAlert('Plex connection error: ' + errorMsg, 'danger');
+            }
+        });
+    }
+    
+    function testTmdbConnection() {
+        const tmdbApiKey = $('#tmdbApiKey').val().trim();
+        const tmdbLanguage = $('#tmdbLanguage').val();
+        
+        if (!tmdbApiKey) {
+            showAlert('Please enter TMDB API Key before testing', 'warning');
+            return;
+        }
+        
+        setButtonLoading('#testTmdbBtn', true);
+        $('#tmdbStatus').removeClass().addClass('badge bg-warning').text('Testing...');
+        
+        $.ajax({
+            url: '/api/test_tmdb_connection',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                tmdbApiKey: tmdbApiKey,
+                tmdbLanguage: tmdbLanguage
+            }),
+            success: function(response) {
+                setButtonLoading('#testTmdbBtn', false);
+                
+                if (response.success) {
+                    $('#tmdbStatus').removeClass().addClass('badge bg-success').text('Connected');
+                    $('#tmdbDetails').html(`
+                        <small>API Version: v${response.apiInfo.version}<br>
+                        Language: ${response.apiInfo.language}<br>
+                        Response: ${response.connectionTime}ms<br>
+                        Movie Results: ${response.apiInfo.movieSearchResults}<br>
+                        TV Results: ${response.apiInfo.tvSearchResults}<br>
+                        Genres: ${response.apiInfo.availableGenres}</small>
+                    `);
+                    
+                    showTestResults('TMDB Connection Test', response, 'success');
+                    showAlert('TMDB connection successful!', 'success');
+                } else {
+                    $('#tmdbStatus').removeClass().addClass('badge bg-danger').text('Failed');
+                    $('#tmdbDetails').html(`<small class="text-danger">${response.message}</small>`);
+                    
+                    showTestResults('TMDB Connection Test', response, 'danger');
+                    showAlert('TMDB connection failed: ' + response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#testTmdbBtn', false);
+                $('#tmdbStatus').removeClass().addClass('badge bg-danger').text('Error');
+                
+                const errorMsg = xhr.responseJSON?.message || 'Request failed';
+                $('#tmdbDetails').html(`<small class="text-danger">${errorMsg}</small>`);
+                showAlert('TMDB connection error: ' + errorMsg, 'danger');
+            }
+        });
+    }
+    
+    function testBothConnections() {
+        const plexUrl = $('#plexUrl').val().trim();
+        const plexToken = $('#plexToken').val().trim();
+        const tmdbApiKey = $('#tmdbApiKey').val().trim();
+        const tmdbLanguage = $('#tmdbLanguage').val();
+        
+        if (!plexUrl || !plexToken || !tmdbApiKey) {
+            showAlert('Please fill in all connection details before testing', 'warning');
+            return;
+        }
+        
+        setButtonLoading('#testBothBtn', true);
+        $('#plexStatus').removeClass().addClass('badge bg-warning').text('Testing...');
+        $('#tmdbStatus').removeClass().addClass('badge bg-warning').text('Testing...');
+        
+        $.ajax({
+            url: '/api/test_connections',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                plexUrl: plexUrl,
+                plexToken: plexToken,
+                tmdbApiKey: tmdbApiKey,
+                tmdbLanguage: tmdbLanguage
+            }),
+            success: function(response) {
+                setButtonLoading('#testBothBtn', false);
+                
+                // Update Plex status
+                if (response.plex && response.plex.success) {
+                    $('#plexStatus').removeClass().addClass('badge bg-success').text('Connected');
+                    $('#plexDetails').html(`
+                        <strong>${response.plex.serverInfo.friendlyName}</strong><br>
+                        <small>Version: ${response.plex.serverInfo.version}<br>
+                        Libraries: ${response.plex.libraries.length}</small>
+                    `);
+                } else {
+                    $('#plexStatus').removeClass().addClass('badge bg-danger').text('Failed');
+                    $('#plexDetails').html(`<small class="text-danger">${response.plex?.message || 'Unknown error'}</small>`);
+                }
+                
+                // Update TMDB status
+                if (response.tmdb && response.tmdb.success) {
+                    $('#tmdbStatus').removeClass().addClass('badge bg-success').text('Connected');
+                    $('#tmdbDetails').html(`
+                        <small>API Version: v${response.tmdb.apiInfo.version}<br>
+                        Language: ${response.tmdb.apiInfo.language}</small>
+                    `);
+                } else {
+                    $('#tmdbStatus').removeClass().addClass('badge bg-danger').text('Failed');
+                    $('#tmdbDetails').html(`<small class="text-danger">${response.tmdb?.message || 'Unknown error'}</small>`);
+                }
+                
+                // Show combined results
+                showTestResults('Combined Connection Tests', response, response.success ? 'success' : 'warning');
+                
+                if (response.success) {
+                    showAlert('Both connections successful!', 'success');
+                } else {
+                    showAlert('One or more connections failed. Check the details above.', 'warning');
+                }
+            },
+            error: function() {
+                setButtonLoading('#testBothBtn', false);
+                $('#plexStatus').removeClass().addClass('badge bg-danger').text('Error');
+                $('#tmdbStatus').removeClass().addClass('badge bg-danger').text('Error');
+                showAlert('Connection test failed', 'danger');
+            }
+        });
+    }
+    
+    function testTmdbSearch() {
+        const tmdbApiKey = $('#tmdbApiKey').val().trim();
+        const query = $('#testQuery').val().trim();
+        const mediaType = $('#testMediaType').val();
+        const language = $('#tmdbLanguage').val();
+        
+        if (!tmdbApiKey) {
+            showAlert('Please enter TMDB API Key first', 'warning');
+            return;
+        }
+        
+        if (!query) {
+            showAlert('Please enter a search query', 'warning');
+            return;
+        }
+        
+        setButtonLoading('#testSearchBtn', true);
+        
+        $.ajax({
+            url: '/api/test_tmdb_search',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                tmdbApiKey: tmdbApiKey,
+                query: query,
+                mediaType: mediaType,
+                language: language
+            }),
+            success: function(response) {
+                setButtonLoading('#testSearchBtn', false);
+                
+                if (response.success) {
+                    let resultsHtml = `<div class="alert alert-success fade-in">`;
+                    resultsHtml += `<h6><i class="fas fa-search me-2"></i>Search Results for "${query}"</h6>`;
+                    resultsHtml += `<p>Found ${response.total_results} total results</p>`;
+                    
+                    if (response.results && response.results.length > 0) {
+                        resultsHtml += `<h6>Top Results:</h6><ul class="mb-0">`;
+                        response.results.forEach(item => {
+                            const title = item.title || item.name;
+                            const year = item.release_date || item.first_air_date;
+                            const yearStr = year ? ` (${year.substring(0, 4)})` : '';
+                            const rating = item.vote_average ? ` - ⭐ ${item.vote_average}/10` : '';
+                            resultsHtml += `<li><strong>${title}${yearStr}</strong>${rating}</li>`;
+                        });
+                        resultsHtml += `</ul>`;
+                    }
+                    
+                    resultsHtml += `</div>`;
+                    
+                    $('#testResultsContent').html(resultsHtml);
+                    $('#testResults').slideDown();
+                    
+                    showAlert(`Search successful! Found ${response.total_results} results.`, 'success');
+                } else {
+                    showAlert('Search failed: ' + response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#testSearchBtn', false);
+                const errorMsg = xhr.responseJSON?.message || 'Search test failed';
+                showAlert('Search error: ' + errorMsg, 'danger');
+            }
+        });
+    }
+    
+    function showTestResults(title, response, alertType) {
+        let resultsHtml = `<div class="alert alert-${alertType} fade-in" role="alert">`;
+        resultsHtml += `<h6><i class="fas fa-clipboard-check me-2"></i>${title}</h6>`;
+        resultsHtml += `<p><strong>Status:</strong> ${response.success ? '✅ Success' : '❌ Failed'}</p>`;
+        resultsHtml += `<p><strong>Message:</strong> ${response.message}</p>`;
+        
+        if (response.serverInfo) {
+            resultsHtml += `<div class="mt-2">`;
+            resultsHtml += `<strong>Server Details:</strong><br>`;
+            resultsHtml += `• Name: ${response.serverInfo.friendlyName}<br>`;
+            resultsHtml += `• Version: ${response.serverInfo.version}<br>`;
+            resultsHtml += `• Platform: ${response.serverInfo.platform}<br>`;
+            resultsHtml += `• Libraries: ${response.libraries.length}<br>`;
+            resultsHtml += `</div>`;
+        }
+        
+        if (response.apiInfo) {
+            resultsHtml += `<div class="mt-2">`;
+            resultsHtml += `<strong>API Details:</strong><br>`;
+            resultsHtml += `• Version: TMDB v${response.apiInfo.version}<br>`;
+            resultsHtml += `• Language: ${response.apiInfo.language}<br>`;
+            resultsHtml += `• Movie Search Results: ${response.apiInfo.movieSearchResults}<br>`;
+            resultsHtml += `• TV Search Results: ${response.apiInfo.tvSearchResults}<br>`;
+            resultsHtml += `• Available Genres: ${response.apiInfo.availableGenres}<br>`;
+            resultsHtml += `</div>`;
+        }
+        
+        if (response.connectionTime) {
+            resultsHtml += `<p><strong>Response Time:</strong> ${response.connectionTime}ms</p>`;
+        }
+        
+        if (response.endpoints_tested) {
+            resultsHtml += `<p><strong>Endpoints Tested:</strong> ${response.endpoints_tested.join(', ')}</p>`;
+        }
+        
+        resultsHtml += '</div>';
+        
+        $('#testResultsContent').html(resultsHtml);
+        $('#testResults').slideDown();
+    }
+});
+</script>
+{% endblock %}
