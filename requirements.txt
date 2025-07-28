@@ -39,7 +39,7 @@ pytz==2023.3
 rich==13.7.0
 
 # Security and cryptography
-cryptography==41.0.7
+cryptography==44.0.1
 
 # File path handling (Python < 3.4 compatibility)
 pathlib2==2.3.7.post1
