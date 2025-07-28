@@ -1,0 +1,1544 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card status-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Missing Episodes Detection
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="missingEpisodesForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">TV Library</label>
+                            <select class="form-select" id="library" name="library">
+                                <option value="all">All TV Libraries</option>
+                                <!-- Libraries will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Options</label><br>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="includeSpecials" name="includeSpecials">
+                                <label class="form-check-label" for="includeSpecials">
+                                    Include Special Episodes
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="startDetectionBtn">
+                            <i class="fas fa-play me-2"></i>Find Missing Episodes
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="stopDetectionBtn" style="display: none;">
+                            <i class="fas fa-stop me-2"></i>Stop Detection
+                        </button>
+                        <button type="button" class="btn btn-outline-info" id="refreshLibrariesBtn">
+                            <i class="fas fa-refresh me-2"></i>Refresh Libraries
+                        </button>
+                        <button type="button" class="btn btn-outline-info" id="testTmdbSearchBtn">
+                            <i class="fas fa-search me-2"></i>Test TMDB Search
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" id="showFailedShowsBtn">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Shows Without Episodes
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" id="showIncompleteShowsBtn">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Shows With Incomplete Data
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="cleanupDuplicatesBtn">
+                            <i class="fas fa-broom me-2"></i>Cleanup Duplicates
+                        </button>
+                        <button type="button" class="btn btn-outline-success" id="exportResultsBtn" style="display: none;">
+                            <i class="fas fa-download me-2"></i>Export CSV
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="progress-container mt-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span id="progressLabel">Progress</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             id="progressBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted" id="progressMessage">Ready to start...</small>
+                    </div>
+                </div>
+
+                <!-- Results Summary -->
+                <div id="resultsSummary" class="mt-4" style="display: none;">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Detection Results</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4 text-center">
+                                    <h3 class="text-primary" id="totalMissingCount">0</h3>
+                                    <small class="text-muted">Missing Episodes</small>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <h3 class="text-warning" id="showsWithMissingCount">0</h3>
+                                    <small class="text-muted">Shows with Missing Episodes</small>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <button class="btn btn-success btn-sm" id="exportResultsBtn2">
+                                        <i class="fas fa-download me-1"></i>Export Results
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" id="collapseAllBtn">
+                                        <i class="fas fa-compress me-1"></i>Collapse All
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" id="expandAllBtn">
+                                        <i class="fas fa-expand me-1"></i>Expand All
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Missing Episodes Tree View -->
+                            <div id="missingEpisodesTree" class="missing-episodes-tree">
+                                <!-- Episodes will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card status-card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Connection Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="connection-status">
+                        <strong>Plex Server:</strong>
+                        <span id="plexStatus" class="badge bg-secondary">Checking...</span>
+                    </div>
+                    <div id="plexDetails" class="connection-details text-muted"></div>
+                </div>
+                <div class="mb-3">
+                    <div class="connection-status">
+                        <strong>TMDB API:</strong>
+                        <span id="tmdbStatus" class="badge bg-secondary">Checking...</span>
+                    </div>
+                    <div id="tmdbDetails" class="connection-details text-muted"></div>
+                </div>
+                <div class="mb-3">
+                    <strong>Last Detection:</strong>
+                    <div id="lastDetection" class="text-muted">Never</div>
+                </div>
+                <div class="d-grid">
+                    <a href="{{ url_for('config') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-cog me-1"></i>Configure Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card status-card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-list-alt me-2"></i>Recent Activity
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="recentActivity" class="log-container" style="max-height: 200px;">
+                    <div class="text-muted">No recent activity</div>
+                </div>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="clearLogBtn">
+                        <i class="fas fa-trash me-1"></i>Clear Log
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Missing Shows List -->
+        <div class="card status-card mt-3" id="missingShowsCard" style="display: none;">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-tv me-2"></i>Shows with Missing Episodes
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="missingShowsList" class="missing-shows-list" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Missing shows will be populated here -->
+                </div>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-outline-info" id="jumpToShowBtn" disabled>
+                        <i class="fas fa-arrow-right me-1"></i>Jump to Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.missing-episodes-tree {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.show-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.show-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.show-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.show-header:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.show-header.collapsed {
+    border-bottom: none;
+}
+
+.show-poster {
+    width: 60px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.show-poster-placeholder {
+    width: 60px;
+    height: 90px;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.show-info h5 {
+    margin-bottom: 0.25rem;
+    color: #212529;
+}
+
+.show-info .text-muted {
+    font-size: 0.875rem;
+}
+
+.episodes-container {
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+.episode-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 0.25rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.episode-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 1px 4px rgba(0,123,255,0.1);
+}
+
+.episode-item:last-child {
+    margin-bottom: 0;
+}
+
+.episode-badge {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.missing-shows-list {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background-color: #f8f9fa;
+}
+
+/* Simplified missing show items - no pictures */
+.missing-show-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.missing-show-item:hover {
+    background-color: #e9ecef;
+}
+
+.missing-show-item:last-child {
+    border-bottom: none;
+}
+
+.missing-show-item.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+.missing-show-info {
+    flex-grow: 1;
+}
+
+.missing-show-info h6 {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.missing-show-info .badge {
+    font-size: 0.75rem;
+}
+
+.collapse-toggle {
+    float: right;
+    transition: transform 0.3s ease;
+}
+
+.collapse-toggle.collapsed {
+    transform: rotate(-90deg);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    let statusCheckInterval;
+    let activityCounter = 0;
+    let missingEpisodesData = [];
+    let selectedShowId = null;
+    
+    // Load initial status and libraries
+    updateConnectionStatus();
+    loadTVLibraries();
+    
+    // Load existing missing episodes data on page load
+    loadExistingResults();
+    
+    $('#missingEpisodesForm').on('submit', function(e) {
+        e.preventDefault();
+        startMissingEpisodesDetection();
+    });
+    
+    $('#stopDetectionBtn').on('click', function() {
+        stopDetection();
+    });
+    
+    $('#refreshLibrariesBtn').on('click', function() {
+        loadTVLibraries();
+    });
+    
+    $('#clearLogBtn').on('click', function() {
+        $('#recentActivity').html('<div class="text-muted">Activity log cleared</div>');
+    });
+
+    $('#testTmdbSearchBtn').on('click', function() {
+        testTmdbSearch();
+    });
+
+    $('#exportResultsBtn, #exportResultsBtn2').on('click', function() {
+        exportResults();
+    });
+
+    $('#showFailedShowsBtn').on('click', showFailedShows);
+    
+    $('#showIncompleteShowsBtn').on('click', showIncompleteShows);
+    
+    $('#cleanupDuplicatesBtn').on('click', function() {
+        if (confirm('This will clean up duplicate shows in the database. Are you sure?')) {
+            cleanupDuplicates();
+        }
+    });
+
+    $('#collapseAllBtn').on('click', function() {
+        $('.show-episodes-collapse').collapse('hide');
+        $('.collapse-toggle').addClass('collapsed');
+    });
+
+    $('#expandAllBtn').on('click', function() {
+        $('.show-episodes-collapse').collapse('show');
+        $('.collapse-toggle').removeClass('collapsed');
+    });
+
+    $('#jumpToShowBtn').on('click', function() {
+        if (selectedShowId) {
+            const showElement = $(`#show-${selectedShowId}`);
+            if (showElement.length) {
+                $('html, body').animate({
+                    scrollTop: showElement.offset().top - 100
+                }, 500);
+                showElement.find('.show-header').click();
+            }
+        }
+    });
+    
+    function startMissingEpisodesDetection() {
+        const formData = {
+            library: $('#library').val(),
+            includeSpecials: $('#includeSpecials').is(':checked')
+        };
+        
+        setButtonLoading('#startDetectionBtn', true);
+        
+        $.ajax({
+            url: '/api/find_missing_episodes',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                setButtonLoading('#startDetectionBtn', false);
+                
+                if (response.success) {
+                    $('#startDetectionBtn').hide();
+                    $('#stopDetectionBtn').show();
+                    $('.progress-container').slideDown();
+                    
+                    // Hide previous results
+                    $('#resultsSummary').hide();
+                    $('#resultsSummary .alert-warning').remove(); // Clear previous warnings
+                    $('#missingShowsCard').hide();
+                    $('#exportResultsBtn').hide();
+                    
+                    // Start checking status
+                    statusCheckInterval = setInterval(checkTaskStatus, 1000);
+                    
+                    addActivity('Missing episodes detection started');
+                    showAlert('Missing episodes detection started!', 'success');
+                } else {
+                    showAlert('Error starting detection: ' + response.message, 'danger');
+                    addActivity('Detection start failed: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#startDetectionBtn', false);
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                showAlert('Error starting detection: ' + errorMsg, 'danger');
+                addActivity('Detection start error: ' + errorMsg);
+            }
+        });
+    }
+    
+    function stopDetection() {
+        // Call the backend to actually stop the task
+        $.ajax({
+            url: '/api/stop_task',
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    addActivity('Detection stopped: ' + response.message);
+                    showAlert('Detection stopped successfully!', 'info');
+                } else {
+                    addActivity('Stop failed: ' + response.message);
+                    showAlert('Failed to stop detection: ' + response.message, 'warning');
+                }
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                addActivity('Stop error: ' + errorMsg);
+                showAlert('Error stopping detection: ' + errorMsg, 'danger');
+            }
+        });
+        
+        // Clear the status checking interval
+        if (statusCheckInterval) {
+            clearInterval(statusCheckInterval);
+            statusCheckInterval = null;
+        }
+        
+        // Reset UI
+        $('#startDetectionBtn').show();
+        $('#stopDetectionBtn').hide();
+        $('.progress-container').slideUp();
+    }
+    
+    function checkTaskStatus() {
+        $.ajax({
+            url: '/api/task_status',
+            method: 'GET',
+            success: function(status) {
+                updateProgress(status.progress, status.message);
+                
+                if (!status.running && statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                    statusCheckInterval = null;
+                    
+                    $('#startDetectionBtn').show();
+                    $('#stopDetectionBtn').hide();
+                    
+                    if (status.progress === 100) {
+                        // Check if this was detection or reprocessing based on message or results
+                        const results = status.results || {};
+                        
+                        if (results.hasOwnProperty('successful') && results.hasOwnProperty('failed')) {
+                            // This was reprocessing
+                            const message = `Reprocessing complete! ${results.successful || 0} successful, ${results.failed || 0} failed`;
+                            addActivity(message);
+                            showAlert(message, results.failed > 0 ? 'warning' : 'success');
+                            
+                            setTimeout(() => {
+                                $('.progress-container').slideUp();
+                                resetReprocessingUI();
+                            }, 3000);
+                        } else {
+                            // This was missing episodes detection
+                            loadMissingEpisodesResults();
+                            
+                            addActivity('Detection completed successfully');
+                            showAlert('Missing episodes detection completed!', 'success');
+                            
+                            // Update last detection time
+                            $('#lastDetection').text(new Date().toLocaleString());
+                            
+                            setTimeout(() => {
+                                $('.progress-container').slideUp();
+                            }, 3000);
+                        }
+                    } else {
+                        // Task ended but not completed (stopped or error)
+                        addActivity('Task ended: ' + status.message);
+                        
+                        // Reset UI based on current UI state
+                        if ($('#stopDetectionBtn').is(':visible')) {
+                            resetReprocessingUI();
+                        } else {
+                            $('.progress-container').slideUp();
+                        }
+                    }
+                }
+            },
+            error: function() {
+                console.error('Failed to check task status');
+            }
+        });
+    }
+
+    function loadMissingEpisodesResults() {
+        $.ajax({
+            url: '/api/get_missing_episodes',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    missingEpisodesData = response.missing_episodes;
+                    showResults(response);
+                    populateMissingShowsList(response.missing_episodes);
+                    createMissingEpisodesTree(response.missing_episodes);
+                    
+                    $('#exportResultsBtn').show();
+                    
+                    if (response.missing_episodes.length > 0) {
+                        $('#missingShowsCard').slideDown();
+                    }
+                }
+            },
+            error: function() {
+                showAlert('Error loading results', 'danger');
+            }
+        });
+    }
+
+    function loadExistingResults() {
+        // Load existing missing episodes data without showing alerts
+        $.ajax({
+            url: '/api/get_missing_episodes',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.missing_episodes && response.missing_episodes.length > 0) {
+                    missingEpisodesData = response.missing_episodes;
+                    showResults(response, true); // Pass true for isInitialLoad
+                    populateMissingShowsList(response.missing_episodes);
+                    createMissingEpisodesTree(response.missing_episodes);
+                    
+                    $('#exportResultsBtn').show();
+                    $('#missingShowsCard').slideDown();
+                    
+                    // Update last detection time if available
+                    if (response.detection_run && response.detection_run.completed_at) {
+                        const lastDetection = new Date(response.detection_run.completed_at).toLocaleString();
+                        $('#lastDetection').text(lastDetection);
+                    }
+                    
+                    addActivity(`Loaded ${response.missing_episodes.length} missing episodes from previous detection`);
+                }
+                // If no data exists, that's fine - just don't show anything
+            },
+            error: function() {
+                // Silently fail - no need to show error on page load if no data exists
+                console.log('No existing results found or error loading data');
+            }
+        });
+    }
+
+    function showResults(response, isInitialLoad = false) {
+        const totalMissing = response.total_missing || 0;
+        const showsWithMissing = response.missing_episodes ? 
+            new Set(response.missing_episodes.map(ep => ep.show_title)).size : 0;
+        
+        // Check for shows with incomplete episode data
+        const showsWithIncompleteData = response.missing_episodes ? 
+            new Set(response.missing_episodes.filter(ep => 
+                !ep.vote_average || !ep.overview || !ep.episode_title
+            ).map(ep => ep.show_title)).size : 0;
+        
+        $('#totalMissingCount').text(totalMissing);
+        $('#showsWithMissingCount').text(showsWithMissing);
+        
+        // Only add info/warning messages if this is not the initial page load
+        if (!isInitialLoad) {
+            // Add info message about shows without episode data
+            const infoMsg = `
+                <div class="alert alert-info mt-3" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> If some shows don't display episode details with ratings and overviews, they may not have been processed yet due to previous database errors. 
+                    Click the <strong>"Shows Without Episodes"</strong> button to identify and reprocess these shows, then run detection again.
+                </div>
+            `;
+            $('#resultsSummary .card-body').append(infoMsg);
+            
+            // Add warning message if some shows have incomplete data
+            if (showsWithIncompleteData > 0) {
+                const warningMsg = `
+                    <div class="alert alert-warning mt-3" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Notice:</strong> ${showsWithIncompleteData} show(s) have incomplete episode data (missing ratings, overviews, or titles). 
+                        Look for the "⚠️ Incomplete episode data" warnings and use the "Reprocess" buttons to fetch complete information.
+                    </div>
+                `;
+                $('#resultsSummary .card-body').append(warningMsg);
+            }
+        }
+        
+        $('#resultsSummary').slideDown();
+    }
+
+    function populateMissingShowsList(episodes) {
+        if (!episodes || episodes.length === 0) {
+            $('#missingShowsList').html('<div class="text-muted p-2">No missing episodes found!</div>');
+            return;
+        }
+
+        // Group episodes by show
+        const showsWithMissing = {};
+        episodes.forEach(ep => {
+            if (!showsWithMissing[ep.show_title]) {
+                showsWithMissing[ep.show_title] = {
+                    title: ep.show_title,
+                    year: ep.show_year,
+                    episodes: [],
+                    tmdb_show_id: ep.tmdb_show_id
+                };
+            }
+            showsWithMissing[ep.show_title].episodes.push(ep);
+        });
+
+        let html = '';
+        Object.keys(showsWithMissing).sort().forEach(showTitle => {
+            const show = showsWithMissing[showTitle];
+            const showId = `show-${show.tmdb_show_id}`;
+            
+            html += `
+                <div class="missing-show-item" data-show-id="${showId}" data-tmdb-id="${show.tmdb_show_id}">
+                    <div class="missing-show-info">
+                        <h6>${show.title}${show.year ? ` (${show.year})` : ''}</h6>
+                    </div>
+                    <span class="badge bg-warning">${show.episodes.length} missing</span>
+                </div>
+            `;
+        });
+
+        $('#missingShowsList').html(html);
+
+        // Add click handlers for show selection
+        $('.missing-show-item').on('click', function() {
+            $('.missing-show-item').removeClass('selected');
+            $(this).addClass('selected');
+            selectedShowId = $(this).data('show-id');
+            $('#jumpToShowBtn').prop('disabled', false);
+        });
+    }
+
+    function createMissingEpisodesTree(episodes) {
+        if (!episodes || episodes.length === 0) {
+            $('#missingEpisodesTree').html('<div class="alert alert-info">No missing episodes found!</div>');
+            return;
+        }
+
+        // Group episodes by show
+        const showsWithMissing = {};
+        episodes.forEach(ep => {
+            if (!showsWithMissing[ep.show_title]) {
+                showsWithMissing[ep.show_title] = {
+                    title: ep.show_title,
+                    year: ep.show_year,
+                    episodes: [],
+                    tmdb_show_id: ep.tmdb_show_id,
+                    poster_path: ep.show_poster_path
+                };
+            }
+            showsWithMissing[ep.show_title].episodes.push(ep);
+        });
+
+        let html = '';
+        Object.keys(showsWithMissing).sort().forEach((showTitle, index) => {
+            const show = showsWithMissing[showTitle];
+            const showId = `show-${show.tmdb_show_id}`;
+            const collapseId = `collapse-${show.tmdb_show_id}`;
+            const posterUrl = show.poster_path ? 
+                `https://image.tmdb.org/t/p/w300${show.poster_path}` : null;
+            
+            // Sort episodes by season and episode number
+            show.episodes.sort((a, b) => {
+                if (a.season_number !== b.season_number) {
+                    return a.season_number - b.season_number;
+                }
+                return a.episode_number - b.episode_number;
+            });
+
+            html += `
+                <div class="show-card" id="${showId}">
+                    <div class="show-header" data-bs-toggle="collapse" data-bs-target="#${collapseId}" 
+                         aria-expanded="${index === 0 ? 'true' : 'false'}">
+                        <div class="d-flex align-items-start gap-3">
+                            ${posterUrl ? 
+                                `<img src="${posterUrl}" alt="${show.title}" class="show-poster" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div class="show-poster-placeholder" style="display: none;"><i class="fas fa-tv"></i></div>` :
+                                `<div class="show-poster-placeholder"><i class="fas fa-tv"></i></div>`
+                            }
+                            <div class="show-info flex-grow-1">
+                                <h5>${show.title}${show.year ? ` (${show.year})` : ''}</h5>
+                                <p class="text-muted mb-2">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    ${show.episodes.length} missing episode${show.episodes.length > 1 ? 's' : ''}
+                                </p>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    ${getSeasonBadges(show.episodes)}
+                                </div>
+                                ${checkForIncompleteData(show.episodes) ? 
+                                    '<div class="mt-2"><span class="badge bg-warning">⚠️ Incomplete episode data</span> <button class="btn btn-xs btn-outline-primary reprocess-show-inline" data-title="' + show.title + '" data-year="' + (show.year || '') + '">Reprocess</button></div>' : ''
+                                }
+                            </div>
+                            <div class="collapse-toggle ${index === 0 ? '' : 'collapsed'}">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="collapse show-episodes-collapse ${index === 0 ? 'show' : ''}" id="${collapseId}">
+                        <div class="episodes-container">
+                            ${createEpisodesHtml(show.episodes)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        $('#missingEpisodesTree').html(html);
+
+        // Update collapse toggle icons
+        $('.show-episodes-collapse').on('show.bs.collapse', function() {
+            $(this).siblings('.show-header').find('.collapse-toggle').removeClass('collapsed');
+        });
+
+        $('.show-episodes-collapse').on('hide.bs.collapse', function() {
+            $(this).siblings('.show-header').find('.collapse-toggle').addClass('collapsed');
+        });
+        
+        // Add event handlers for inline reprocess buttons
+        $('.reprocess-show-inline').on('click', function(e) {
+            e.stopPropagation(); // Prevent collapse toggle
+            const title = $(this).data('title');
+            const year = $(this).data('year');
+            reprocessShow(title, year, $(this));
+        });
+    }
+
+    function getSeasonBadges(episodes) {
+        const seasons = [...new Set(episodes.map(ep => ep.season_number))].sort((a, b) => a - b);
+        return seasons.map(season => {
+            const episodeCount = episodes.filter(ep => ep.season_number === season).length;
+            return `<span class="badge bg-secondary">S${season.toString().padStart(2, '0')} (${episodeCount})</span>`;
+        }).join(' ');
+    }
+
+    function checkForIncompleteData(episodes) {
+        if (!episodes || episodes.length === 0) return false;
+        
+        // Check if any episodes are missing key data
+        return episodes.some(ep => 
+            !ep.vote_average || 
+            !ep.overview || 
+            !ep.episode_title || 
+            !ep.air_date
+        );
+    }
+
+    function createEpisodesHtml(episodes) {
+        let html = '';
+        
+        // Debug: Log episode data to console
+        console.log('Creating episodes HTML for:', episodes.length, 'episodes');
+        if (episodes.length > 0) {
+            console.log('Sample episode data:', episodes[0]);
+        }
+        
+        if (!episodes || episodes.length === 0) {
+            return '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>No episode data available in database. This show needs to be processed. <button class="btn btn-sm btn-outline-primary reprocess-btn">Reprocess Show</button></div>';
+        }
+        
+        episodes.forEach((ep, index) => {
+            const airDate = ep.air_date ? new Date(ep.air_date).toLocaleDateString() : 'Unknown';
+            const rating = ep.vote_average && ep.vote_average > 0 ? `⭐ ${ep.vote_average.toFixed(1)}` : '';
+            const hasOverview = ep.overview && ep.overview.trim().length > 0;
+            const episodeTitle = ep.episode_title || ep.title || `Episode ${ep.episode_number || '?'}`;
+            
+            // Debug: Log missing data for first few episodes
+            if (!rating && index < 3) {
+                console.log(`No rating for episode ${ep.episode_number}:`, ep);
+            }
+            
+            html += `
+                <div class="episode-item">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="badge bg-primary episode-badge">
+                                S${(ep.season_number || 0).toString().padStart(2, '0')}E${(ep.episode_number || 0).toString().padStart(2, '0')}
+                            </span>
+                            <strong>${episodeTitle}</strong>
+                            ${!ep.vote_average ? '<span class="badge bg-warning ms-2">No Rating</span>' : ''}
+                        </div>
+                        <div class="d-flex gap-2 align-items-center text-muted small">
+                            ${rating ? `<span>${rating}</span>` : '<span class="text-warning">No rating</span>'}
+                            <span>${airDate}</span>
+                        </div>
+                    </div>
+                    ${hasOverview ? `<p class="text-muted small mb-0">${ep.overview}</p>` : '<p class="text-muted small mb-0 fst-italic">No overview available</p>'}
+                    ${(!ep.vote_average || !ep.overview) ? '<div class="text-warning small">⚠️ Incomplete episode data - consider reprocessing this show</div>' : ''}
+                </div>
+            `;
+        });
+        return html;
+    }
+
+    function exportResults() {
+        if (!missingEpisodesData || missingEpisodesData.length === 0) {
+            showAlert('No missing episodes data to export', 'warning');
+            return;
+        }
+
+        // Create CSV content
+        let csvContent = "Show Title,Show Year,Season,Episode,Episode Title,Air Date,Rating,Overview\n";
+        
+        missingEpisodesData.forEach(ep => {
+            const overview = (ep.overview || '').replace(/"/g, '""');
+            csvContent += `"${ep.show_title}","${ep.show_year || ''}",${ep.season_number},${ep.episode_number},"${ep.episode_title}","${ep.air_date || ''}",${ep.vote_average || ''},"${overview}"\n`;
+        });
+        
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `missing_episodes_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showAlert('Missing episodes list downloaded!', 'success');
+    }
+    
+    function updateProgress(progress, message) {
+        $('#progressBar').css('width', progress + '%').attr('aria-valuenow', progress);
+        $('#progressPercent').text(progress + '%');
+        $('#progressMessage').text(message);
+        
+        const progressBar = $('#progressBar');
+        progressBar.removeClass('bg-danger bg-warning bg-success');
+        
+        if (progress === 100) {
+            progressBar.addClass('bg-success');
+        } else if (progress >= 50) {
+            progressBar.addClass('bg-info');
+        }
+        
+        if (activityCounter % 5 === 0 || progress === 100) {
+            addActivity(message);
+        }
+        activityCounter++;
+    }
+    
+    function addActivity(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const activityHtml = `<div class="fade-in">${timestamp}: ${message}</div>`;
+        
+        $('#recentActivity').prepend(activityHtml);
+        
+        const activities = $('#recentActivity > div');
+        if (activities.length > 50) {
+            activities.slice(50).remove();
+        }
+        
+        $('#recentActivity .text-muted:contains("No recent activity")').remove();
+    }
+    
+function updateLibrariesDropdown(libraries) {
+    const librarySelect = $('#library');
+    if (!librarySelect.length) {
+        console.log('Library select element not found');
+        return;
+    }
+    
+    // Clear existing options
+    librarySelect.empty();
+    
+    // Add "All Libraries" option
+    librarySelect.append('<option value="all">All Libraries</option>');
+    
+    // Add each library
+    libraries.forEach(function(library) {
+        librarySelect.append(`<option value="${library.key}">${library.title}</option>`);
+    });
+    
+    console.log(`Updated library dropdown with ${libraries.length} libraries`);
+}
+
+    function updateConnectionStatus() {
+        // Test Plex connection
+        $.ajax({
+            url: '/api/load_config',
+            method: 'GET',
+            success: function(configResponse) {
+                if (configResponse.success && configResponse.config) {
+                    const config = configResponse.config;
+                    
+                    // Test Plex connection if configured
+                    if (config.plexUrl && config.plexToken) {
+                        testPlexConnection(config);
+                    } else {
+                        $('#plexStatus').removeClass().addClass('badge bg-warning').text('Not Configured');
+                        $('#plexDetails').text('Please configure Plex settings');
+                    }
+                    
+                    // Test TMDB connection if configured
+                    if (config.tmdbApiKey) {
+                        testTmdbConnection(config);
+                    } else {
+                        $('#tmdbStatus').removeClass().addClass('badge bg-warning').text('Not Configured');
+                        $('#tmdbDetails').text('Please configure TMDB API key');
+                    }
+                } else {
+                    $('#plexStatus').removeClass().addClass('badge bg-danger').text('Config Error');
+                    $('#tmdbStatus').removeClass().addClass('badge bg-danger').text('Config Error');
+                }
+            },
+            error: function() {
+                $('#plexStatus').removeClass().addClass('badge bg-danger').text('Config Error');
+                $('#tmdbStatus').removeClass().addClass('badge bg-danger').text('Config Error');
+            }
+        });
+    }
+    
+    function testPlexConnection(config) {
+        $.ajax({
+            url: '/api/get_plex_libraries',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                plexUrl: config.plexUrl,
+                plexToken: config.plexToken
+            }),
+            success: function(response) {
+                if (response.success) {
+                    $('#plexStatus').removeClass().addClass('badge bg-success').text('Connected');
+                    
+                    let details = '';
+                    if (response.friendlyName) {
+                        details += `<strong>${response.friendlyName}</strong><br>`;
+                    }
+                    if (response.version) {
+                        details += `Version: ${response.version}<br>`;
+                    }
+                    if (response.libraries && response.libraries.length > 0) {
+                        const tvLibraries = response.libraries.filter(lib => lib.type === 'show');
+                        details += `TV Libraries: ${tvLibraries.length}`;
+                        
+                        // Update libraries dropdown
+                        updateLibrariesDropdown(response.libraries);
+                    }
+                    $('#plexDetails').html(details);
+                } else {
+                    $('#plexStatus').removeClass().addClass('badge bg-danger').text('Failed');
+                    $('#plexDetails').text(response.message || 'Connection failed');
+                }
+            },
+            error: function(xhr) {
+                $('#plexStatus').removeClass().addClass('badge bg-danger').text('Error');
+                $('#plexDetails').text('Connection error');
+                console.error('Plex connection error:', xhr);
+            }
+        });
+    }
+
+    function testTmdbConnection(config) {
+        $.ajax({
+            url: '/api/test_tmdb_connection',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                tmdbApiKey: config.tmdbApiKey,
+                tmdbLanguage: config.tmdbLanguage || 'en-US'
+            }),
+            success: function(response) {
+                if (response.success) {
+                    $('#tmdbStatus').removeClass().addClass('badge bg-success').text('Connected');
+                    $('#tmdbDetails').html(`
+                        API Version: v${response.apiInfo?.version || '3'}<br>
+                        Language: ${response.apiInfo?.language || config.tmdbLanguage || 'en-US'}
+                    `);
+                } else {
+                    $('#tmdbStatus').removeClass().addClass('badge bg-danger').text('Failed');
+                    $('#tmdbDetails').text(response.message || 'Connection failed');
+                }
+            },
+            error: function(xhr) {
+                $('#tmdbStatus').removeClass().addClass('badge bg-danger').text('Error');
+                $('#tmdbDetails').text('API connection error');
+                console.error('TMDB connection error:', xhr);
+            }
+        });
+    }
+    
+    function loadTVLibraries() {
+        setButtonLoading('#refreshLibrariesBtn', true);
+        
+        $.ajax({
+            url: '/api/load_config',
+            method: 'GET',
+            success: function(configResponse) {
+                if (configResponse.success && configResponse.config && 
+                    configResponse.config.plexUrl && configResponse.config.plexToken) {
+                    
+                    $.ajax({
+                        url: '/api/get_plex_libraries',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            plexUrl: configResponse.config.plexUrl,
+                            plexToken: configResponse.config.plexToken
+                        }),
+                        success: function(response) {
+                            setButtonLoading('#refreshLibrariesBtn', false);
+                            
+                            if (response.success) {
+                                const librarySelect = $('#library');
+                                librarySelect.find('option:not([value="all"])').remove();
+                                
+                                const tvLibraries = response.libraries.filter(lib => lib.type === 'show');
+                                tvLibraries.forEach(library => {
+                                    const option = `<option value="${library.key}">
+                                        ${library.title} - ${library.totalSize} shows
+                                    </option>`;
+                                    librarySelect.append(option);
+                                });
+                                
+                                addActivity(`Loaded ${tvLibraries.length} TV libraries`);
+                            } else {
+                                showAlert('Failed to load libraries', 'warning');
+                            }
+                        },
+                        error: function() {
+                            setButtonLoading('#refreshLibrariesBtn', false);
+                            showAlert('Error loading libraries', 'danger');
+                        }
+                    });
+                } else {
+                    setButtonLoading('#refreshLibrariesBtn', false);
+                    showAlert('Please configure Plex settings first', 'warning');
+                }
+            }
+        });
+    }
+    
+    function showIncompleteShows() {
+        setButtonLoading('#showIncompleteShowsBtn', true);
+        
+        $.ajax({
+            url: '/api/shows_with_incomplete_episodes',
+            method: 'GET',
+            success: function(response) {
+                setButtonLoading('#showIncompleteShowsBtn', false);
+                
+                if (response.success) {
+                    if (response.shows.length === 0) {
+                        showAlert('All shows have complete episode data!', 'success');
+                        return;
+                    }
+                    
+                    let modalContent = `
+                        <div class="modal fade" id="incompleteShowsModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Shows With Incomplete Episode Data (${response.shows.length})
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="text-muted">These shows have episode records but are missing ratings, overviews, or titles. Click "Reprocess" to fetch complete data from TMDB.</p>
+                                        <div class="list-group">
+                    `;
+                    
+                    response.shows.forEach(show => {
+                        const lastUpdated = show.last_updated ? 
+                            new Date(show.last_updated).toLocaleDateString() : 'Never';
+                        
+                        modalContent += `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${show.title}${show.year ? ` (${show.year})` : ''}</h6>
+                                    <small class="text-muted">Last updated: ${lastUpdated} | Episodes: ${show.episode_count} | Missing data: ${show.missing_data_types}</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary reprocess-incomplete-show-btn" 
+                                        data-title="${show.title}" data-year="${show.year || ''}">
+                                    <i class="fas fa-redo me-1"></i>Reprocess
+                                </button>
+                            </div>
+                        `;
+                    });
+                    
+                    modalContent += `
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        <button type="button" class="btn btn-warning" id="reprocessAllIncompleteBtn">
+                                            <i class="fas fa-redo me-2"></i>Reprocess All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing modal if any
+                    $('#incompleteShowsModal').remove();
+                    
+                    // Add modal to body
+                    $('body').append(modalContent);
+                    
+                    // Show modal
+                    $('#incompleteShowsModal').modal('show');
+                    
+                    // Add click handlers
+                    $('.reprocess-incomplete-show-btn').on('click', function() {
+                        const title = $(this).data('title');
+                        const year = $(this).data('year');
+                        reprocessShow(title, year, $(this));
+                    });
+                    
+                    $('#reprocessAllIncompleteBtn').on('click', function() {
+                        const shows = response.shows.map(show => ({
+                            title: show.title,
+                            year: show.year
+                        }));
+                        
+                        // Start reprocessing with progress
+                        startReprocessingWithProgress(shows);
+                        $('#incompleteShowsModal').modal('hide');
+                    });
+                    
+                } else {
+                    showAlert('Failed to load shows: ' + response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#showIncompleteShowsBtn', false);
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                showAlert('Error loading shows: ' + errorMsg, 'danger');
+            }
+        });
+    }
+    
+    function showFailedShows() {
+        setButtonLoading('#showFailedShowsBtn', true);
+        
+        $.ajax({
+            url: '/api/shows_without_episodes',
+            method: 'GET',
+            success: function(response) {
+                setButtonLoading('#showFailedShowsBtn', false);
+                
+                if (response.success) {
+                    if (response.shows.length === 0) {
+                        showAlert('All shows have episode data!', 'success');
+                        return;
+                    }
+                    
+                    let modalContent = `
+                        <div class="modal fade" id="failedShowsModal" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Shows Without Episode Data (${response.shows.length})
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="text-muted">These shows don't have detailed episode information. Click "Reprocess" to fetch missing data from TMDB.</p>
+                                        <div class="list-group">
+                    `;
+                    
+                    response.shows.forEach(show => {
+                        const lastUpdated = show.last_updated ? 
+                            new Date(show.last_updated).toLocaleDateString() : 'Never';
+                        
+                        modalContent += `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${show.title}${show.year ? ` (${show.year})` : ''}</h6>
+                                    <small class="text-muted">Last updated: ${lastUpdated}</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary reprocess-show-btn" 
+                                        data-title="${show.title}" data-year="${show.year || ''}">
+                                    <i class="fas fa-redo me-1"></i>Reprocess
+                                </button>
+                            </div>
+                        `;
+                    });
+                    
+                    modalContent += `
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        <button type="button" class="btn btn-warning" id="reprocessAllBtn">
+                                            <i class="fas fa-redo me-2"></i>Reprocess All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing modal if any
+                    $('#failedShowsModal').remove();
+                    
+                    // Add modal to body
+                    $('body').append(modalContent);
+                    
+                    // Show modal
+                    $('#failedShowsModal').modal('show');
+                    
+                    // Add click handlers
+                    $('.reprocess-show-btn').on('click', function() {
+                        const title = $(this).data('title');
+                        const year = $(this).data('year');
+                        reprocessShow(title, year, $(this));
+                    });
+                    
+                    $('#reprocessAllBtn').on('click', function() {
+                        const shows = response.shows.map(show => ({
+                            title: show.title,
+                            year: show.year
+                        }));
+                        
+                        // Start reprocessing with progress
+                        startReprocessingWithProgress(shows);
+                        $('#failedShowsModal').modal('hide');
+                    });
+                    
+                } else {
+                    showAlert('Failed to load shows: ' + response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#showFailedShowsBtn', false);
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                showAlert('Error loading shows: ' + errorMsg, 'danger');
+            }
+        });
+    }
+    
+    function reprocessShow(title, year, button) {
+        if (button) {
+            setButtonLoading(button, true);
+        }
+        
+        // For single show reprocessing, offer choice between instant marking or progress tracking
+        if (confirm('How would you like to reprocess this show?\n\nOK = With progress tracking (recommended)\nCancel = Quick marking (requires running "Find Missing Episodes" after)')) {
+            // Use progress tracking for single show
+            startReprocessingWithProgress([{title: title, year: year}]);
+            if (button) {
+                setButtonLoading(button, false);
+                button.removeClass('btn-outline-primary').addClass('btn-success')
+                      .html('<i class="fas fa-check me-1"></i>Processing...');
+                button.prop('disabled', true);
+            }
+        } else {
+            // Use old method - just mark for reprocessing
+            $.ajax({
+                url: '/api/reprocess_show',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    show_title: title,
+                    show_year: year || null
+                }),
+                success: function(response) {
+                    if (button) {
+                        setButtonLoading(button, false);
+                    }
+                    
+                    if (response.success) {
+                        if (button) {
+                            button.removeClass('btn-outline-primary').addClass('btn-success')
+                                  .html('<i class="fas fa-check me-1"></i>Marked');
+                            button.prop('disabled', true);
+                        }
+                        showAlert(`Show "${title}" marked for reprocessing`, 'success');
+                    } else {
+                        showAlert('Failed to reprocess show: ' + response.message, 'danger');
+                    }
+                },
+                error: function(xhr) {
+                    if (button) {
+                        setButtonLoading(button, false);
+                    }
+                    const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                    showAlert('Error reprocessing show: ' + errorMsg, 'danger');
+                }
+            });
+        }
+    }
+    
+    function startReprocessingWithProgress(shows) {
+        if (!shows || shows.length === 0) {
+            showAlert('No shows to reprocess', 'warning');
+            return;
+        }
+        
+        // Hide previous results and show progress
+        $('#resultsSummary').hide();
+        $('#missingShowsCard').hide();
+        $('#exportResultsBtn').hide();
+        $('.progress-container').slideDown();
+        
+        // Update UI for reprocessing
+        $('#startDetectionBtn').hide();
+        $('#stopDetectionBtn').show().off('click').on('click', function() {
+            stopReprocessing();
+        });
+        $('#stopDetectionBtn .fas').removeClass('fa-stop').addClass('fa-stop');
+        $('#stopDetectionBtn').html('<i class="fas fa-stop me-2"></i>Stop Reprocessing');
+        
+        $.ajax({
+            url: '/api/reprocess_shows_with_progress',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                show_titles: shows
+            }),
+            success: function(response) {
+                if (response.success) {
+                    // Start checking status
+                    statusCheckInterval = setInterval(checkTaskStatus, 1000);
+                    
+                    addActivity(`Reprocessing started for ${shows.length} shows`);
+                    showAlert(`Started reprocessing ${shows.length} shows with progress tracking!`, 'success');
+                } else {
+                    showAlert('Error starting reprocessing: ' + response.message, 'danger');
+                    resetReprocessingUI();
+                }
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                showAlert('Error starting reprocessing: ' + errorMsg, 'danger');
+                resetReprocessingUI();
+            }
+        });
+    }
+    
+    function stopReprocessing() {
+        // Call the backend to actually stop the task
+        $.ajax({
+            url: '/api/stop_task',
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    addActivity('Reprocessing stopped: ' + response.message);
+                    showAlert('Reprocessing stopped successfully!', 'info');
+                } else {
+                    addActivity('Stop failed: ' + response.message);
+                    showAlert('Failed to stop reprocessing: ' + response.message, 'warning');
+                }
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                addActivity('Stop error: ' + errorMsg);
+                showAlert('Error stopping reprocessing: ' + errorMsg, 'danger');
+            }
+        });
+        
+        // Clear the status checking interval
+        if (statusCheckInterval) {
+            clearInterval(statusCheckInterval);
+            statusCheckInterval = null;
+        }
+        
+        // Reset UI
+        resetReprocessingUI();
+    }
+    
+    function resetReprocessingUI() {
+        $('#startDetectionBtn').show();
+        $('#stopDetectionBtn').hide();
+        $('.progress-container').slideUp();
+    }
+    
+    function cleanupDuplicates() {
+        setButtonLoading('#cleanupDuplicatesBtn', true);
+        
+        $.ajax({
+            url: '/api/cleanup_duplicate_shows',
+            method: 'POST',
+            success: function(response) {
+                setButtonLoading('#cleanupDuplicatesBtn', false);
+                
+                if (response.success) {
+                    if (response.cleaned_count > 0) {
+                        showAlert(`Successfully cleaned up ${response.cleaned_count} duplicate shows!`, 'success');
+                        addActivity(`Cleaned up ${response.cleaned_count} duplicate shows`);
+                    } else {
+                        showAlert('No duplicate shows found to clean up.', 'info');
+                    }
+                } else {
+                    showAlert('Failed to cleanup duplicates: ' + response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#cleanupDuplicatesBtn', false);
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                showAlert('Error cleaning up duplicates: ' + errorMsg, 'danger');
+            }
+        });
+    }
+    
+    // Check for updates every 30 seconds
+    setInterval(updateConnectionStatus, 30000);
+    
+    // Helper functions
+    function setButtonLoading(buttonSelector, loading) {
+        const button = $(buttonSelector);
+        if (loading) {
+            button.prop('disabled', true);
+            const originalText = button.html();
+            button.data('original-text', originalText);
+            button.html('<i class="fas fa-spinner fa-spin me-2"></i>Loading...');
+        } else {
+            button.prop('disabled', false);
+            const originalText = button.data('original-text');
+            if (originalText) {
+                button.html(originalText);
+            }
+        }
+    }
+    
+    function testTmdbSearch() {
+        // Prompt user for test input
+        const title = prompt('Enter a show title to test (e.g., "Foundation (2021)", "Game of Thrones", etc.):');
+        if (!title) return;
+        
+        const year = prompt('Enter a year (optional, leave blank if year is in title):');
+        
+        setButtonLoading('#testTmdbSearchBtn', true);
+        addActivity(`Testing TMDB search for: ${title}${year ? ` (${year})` : ''}`);
+        
+        $.ajax({
+            url: '/api/test_improved_tmdb_search',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                title: title,
+                year: year ? parseInt(year) : null
+            }),
+            success: function(response) {
+                setButtonLoading('#testTmdbSearchBtn', false);
+                
+                if (response.success) {
+                    const result = response.result;
+                    const message = `Found: ${result.name} (${result.first_air_date || 'Unknown date'}) - TMDB ID: ${result.id}`;
+                    addActivity(`✓ ${message}`);
+                    showAlert(message, 'success');
+                } else {
+                    addActivity(`✗ ${response.message}`);
+                    showAlert(response.message, 'warning');
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#testTmdbSearchBtn', false);
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                addActivity(`✗ Test failed: ${errorMsg}`);
+                showAlert('Test failed: ' + errorMsg, 'danger');
+            }
+        });
+    }
+    
+    function showAlert(message, type) {
+        // Create alert element
+        const alertClass = `alert-${type}`;
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // Remove existing alerts
+        $('.alert').remove();
+        
+        // Add new alert at top of page
+        $('body').prepend(alertHtml);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            $('.alert').fadeOut();
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}
