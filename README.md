@@ -1,13 +1,12 @@
 # Plex-TMDB Manager
 
-A web-based Python tool for managing and syncing Plex Media Server metadata using TMDB (The Movie Database). This application scans your Plex library for missing episodes and cross-checks them with TMDB, providing detailed reporting and metadata synchronization options.
+A web-based Python application that scans your Plex library for missing episodes and cross-checks them with TMDB, providing detailed reporting.
 
 ---
 
 ## Features
 
 - **Missing Episodes Detection:** Scans your Plex TV library and finds episodes missing based on TMDB data.
-- **Metadata Sync:** Optionally updates posters, backdrops, metadata, and ratings using TMDB.
 - **Web UI:** Simple user interface for configuration, connection testing, manual sync, and activity logs.
 - **Flexible:** Easily configurable for different Plex setups and TMDB API keys.
 - **Connection Testing:** Built-in tools to verify Plex and TMDB API configuration.
