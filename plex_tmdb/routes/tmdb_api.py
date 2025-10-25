@@ -45,7 +45,7 @@ def test_tmdb_connection():
         )
     except requests.RequestException as exc:
         current_app.logger.exception("TMDB connection test failed")
-        return jsonify({"success": False, "message": "Connection failed"})
+        return jsonify({"success": False, "message": "Failed to connect to TMDB service. Please check your API key and network connection."})
 
 
 @tmdb_bp.route("/test_tmdb_search", methods=["POST"])
