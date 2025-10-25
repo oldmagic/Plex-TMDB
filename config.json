@@ -1,10 +1,2 @@
 {
-  "plexUrl": "",
-  "plexToken": "",
-  "tmdbApiKey": "",
-  "tmdbLanguage": "en-US",
-  "updatePosters": true,
-  "updateBackdrops": true,
-  "updateMetadata": true,
-  "updateRatings": true
 }

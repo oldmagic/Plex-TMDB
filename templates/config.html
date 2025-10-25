@@ -565,12 +565,13 @@ $(document).ready(function() {
                 setButtonLoading('#testSearchBtn', false);
                 
                 if (response.success) {
+                    const totalResults = response.total_results ?? (response.results ? response.results.length : 0);
                     let resultsHtml = `<div class="alert alert-success fade-in">`;
                     resultsHtml += `<h6><i class="fas fa-search me-2"></i>Search Results for "${query}"</h6>`;
-                    resultsHtml += `<p>Found ${response.total_results} total results</p>`;
+                    resultsHtml += `<p>Found ${totalResults} total result${totalResults === 1 ? '' : 's'}</p>`;
                     
                     if (response.results && response.results.length > 0) {
-                        resultsHtml += `<h6>Top Results:</h6><ul class="mb-0">`;
+                        resultsHtml += `<h6>Top ${response.results.length} result${response.results.length === 1 ? '' : 's'}:</h6><ul class="mb-0">`;
                         response.results.forEach(item => {
                             const title = item.title || item.name;
                             const year = item.release_date || item.first_air_date;
@@ -586,7 +587,7 @@ $(document).ready(function() {
                     $('#testResultsContent').html(resultsHtml);
                     $('#testResults').slideDown();
                     
-                    showAlert(`Search successful! Found ${response.total_results} results.`, 'success');
+                    showAlert(`Search successful! Found ${totalResults} result${totalResults === 1 ? '' : 's'}.`, 'success');
                 } else {
                     showAlert('Search failed: ' + response.message, 'danger');
                 }

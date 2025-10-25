@@ -61,17 +61,17 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
+            <a class="navbar-brand" href="{{ url_for('ui.index') }}">
                 <i class="fas fa-film me-2"></i>Plex-TMDB Manager
             </a>
             <div class="navbar-nav ms-auto">
-                <a class="nav-link {{ 'active' if request.endpoint == 'index' else '' }}" href="{{ url_for('index') }}">
+                <a class="nav-link {{ 'active' if request.endpoint == 'ui.index' else '' }}" href="{{ url_for('ui.index') }}">
                     <i class="fas fa-home me-1"></i>Home
                 </a>
-                <a class="nav-link {{ 'active' if request.endpoint == 'config' else '' }}" href="{{ url_for('config') }}">
+                <a class="nav-link {{ 'active' if request.endpoint == 'ui.config' else '' }}" href="{{ url_for('ui.config') }}">
                     <i class="fas fa-cog me-1"></i>Settings
                 </a>
-                <a class="nav-link {{ 'active' if request.endpoint == 'database_view' else '' }}" href="{{ url_for('database_view') }}">
+                <a class="nav-link {{ 'active' if request.endpoint == 'ui.database_view' else '' }}" href="{{ url_for('ui.database_view') }}">
                     <i class="fas fa-database me-1"></i>Database
                 </a>
             </div>
