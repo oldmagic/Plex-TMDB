@@ -33,7 +33,7 @@ def database_stats():
         return jsonify({"success": True, "stats": stats})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Error getting database stats: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "An internal error has occurred. Please check server logs."})
 
 
 @database_bp.route("/clear_database", methods=["POST"])
