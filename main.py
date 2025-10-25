@@ -134,6 +134,9 @@ def get_tmdb_show_id(show_name):
 
 def get_tmdb_season_episodes(show_id, season_num):
     """Get episodes for a season from TMDB with caching"""
+    # Validate show_id to be digits only
+    if not str(show_id).isdigit():
+        raise ValueError(f"Invalid TMDB show_id: {show_id!r}")
     cache_file = CACHE_DIR / f"show_{show_id}_season_{season_num}.json"
     url = f'https://api.themoviedb.org/3/tv/{show_id}/season/{season_num}'
     
