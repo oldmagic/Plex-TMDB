@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
 import os
 import json
+import traceback
 import threading
 from datetime import datetime, timedelta, date, timezone
 import logging
@@ -970,14 +971,14 @@ def debug_plex_libraries():
         return jsonify(response)
         
     except Exception as e:
+        logger.error("Exception in debug_plex_libraries:\n" + traceback.format_exc())
         response = {
             "success": False, 
-            "message": f"Error connecting to Plex: {str(e)}",
+            "message": "An internal error occurred while connecting to Plex.",
             "friendlyName": "Connection failed",
             "version": "Unknown",
             "libraries": []
         }
-        logger.error(f"Debug response (error): {response}")
         return jsonify(response)
 
 
