@@ -1569,7 +1569,7 @@ def parse_show_title_and_year(title):
         return title, None
     
     # Check for year in parentheses: "Title (YYYY)"
-    year_paren_match = re.search(r'[ \t]*\((\d{4})\)[ \t]*$', title)
+    year_paren_match = re.search(r'\((\d{4})\)[ \t]*$', title)
     
     if year_paren_match:
         year = int(year_paren_match.group(1))
