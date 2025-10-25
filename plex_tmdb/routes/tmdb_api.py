@@ -144,4 +144,4 @@ def test_improved_tmdb_search():
         return jsonify({"success": False, "message": f"No results found for '{title}'"})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Improved TMDB search test failed: %s", exc)
-        return jsonify({"success": False, "message": str(exc)}), 500
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
