@@ -806,7 +806,7 @@ def cleanup_duplicate_shows():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error cleaning up duplicate shows: {e}")
-        return jsonify({"success": False, "message": str(e)})
+        return jsonify({"success": False, "message": "An internal error has occurred. Please check server logs."})
 
 @app.route('/api/cleanup_orphaned_records', methods=['POST'])
 def cleanup_orphaned_records():
