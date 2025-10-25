@@ -122,24 +122,25 @@ def get_tmdb_show_id(show_name):
     
         results = data.get('results', [])
 
-    # check all results for exact name match as tmdb doesn't bother - e.g. "Under the Bridge"
+    # Check all results for exact name match as tmdb doesn't bother - e.g. "Under the Bridge"
     if results:
         for result in results:
             if result['name'] == unquoted_clear_name:
                 return result['id']
-        # no exact match, fallback to return first "match"
-        return results[0]['id']            
+        # No exact match, fallback to None (do not accept arbitrary first result)
+        return None
 
     return None
 
 def get_tmdb_season_episodes(show_id, season_num):
     """Get episodes for a season from TMDB with caching"""
-    # Validate show_id to be digits only
-    if not str(show_id).isdigit():
+    # Validate show_id to be digits only and not None
+    if not show_id or not str(show_id).isdigit():
         raise ValueError(f"Invalid TMDB show_id: {show_id!r}")
     cache_file = CACHE_DIR / f"show_{show_id}_season_{season_num}.json"
     url = f'https://api.themoviedb.org/3/tv/{show_id}/season/{season_num}'
     
+    # Defensive: If show_id is not confirmed via search, do not proceed (should not happen with fixed get_tmdb_show_id)
     data = get_cached_response(
         cache_file,
         url,
