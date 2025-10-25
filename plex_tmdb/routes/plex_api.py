@@ -67,7 +67,7 @@ def test_plex_connection():
         return jsonify({"success": False, "message": "Invalid Plex token"})
     except (BadRequest, NotFound) as exc:
         current_app.logger.error("Plex connection request error: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "An internal error has occurred. Please check server logs."})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Plex connection test failed: %s", exc)
         return jsonify({"success": False, "message": f"Connection failed: {exc}"})
