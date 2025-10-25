@@ -82,7 +82,7 @@ def save_config():
         
     except Exception as e:
         logger.error(f"Error saving config: {e}")
-        return jsonify({"success": False, "message": str(e)})
+        return jsonify({"success": False, "message": "An error occurred while saving configuration."})
 
 @app.route('/api/load_config')
 def load_config():
