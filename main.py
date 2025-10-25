@@ -148,7 +148,7 @@ def get_tmdb_season_episodes(show_id, season_num):
         show_id_int = int(show_id)
         if show_id_int <= 0:
             raise ValueError
-    except Exception:
+    except (ValueError, TypeError):
         raise ValueError(f"Invalid TMDB show_id: {show_id!r}")
     cache_file = CACHE_DIR / f"show_{show_id_int}_season_{season_num}.json"
     url = f'https://api.themoviedb.org/3/tv/{show_id_int}/season/{season_num}'
