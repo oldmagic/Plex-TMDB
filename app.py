@@ -97,7 +97,7 @@ def load_config():
             
     except Exception as e:
         logger.error(f"Error loading config: {e}")
-        return jsonify({"success": False, "message": str(e)})
+        return jsonify({"success": False, "message": "An error occurred while loading the configuration."})
 
 # Connection testing API routes
 @app.route('/api/test_plex_connection', methods=['POST'])
