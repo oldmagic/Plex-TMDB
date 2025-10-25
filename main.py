@@ -127,12 +127,15 @@ def get_tmdb_show_id(show_name):
         for result in results:
             if result['name'] == unquoted_clear_name:
                 show_id = result.get('id')
-                if show_id is not None and str(show_id).isdigit():
-                    return show_id
-                else:
-                    # Unexpected value in cache: log and skip
-                    print(f"{Fore.RED}Invalid TMDb show_id '{show_id}' encountered in cache for '{unquoted_clear_name}'{Style.RESET_ALL}")
-                    return None
+                try:
+                    show_id_int = int(show_id)
+                    if show_id_int > 0:
+                        return show_id_int
+                except Exception:
+                    pass
+                # Unexpected value in cache: log and skip
+                print(f"{Fore.RED}Invalid TMDb show_id '{show_id}' encountered in cache for '{unquoted_clear_name}'{Style.RESET_ALL}")
+                return None
         # No exact match, fallback to None (do not accept arbitrary first result)
         return None
 
@@ -140,9 +143,15 @@ def get_tmdb_show_id(show_name):
 
 def get_tmdb_season_episodes(show_id, season_num):
     """Get episodes for a season from TMDB with caching"""
-    # Validate show_id to be digits only and not None
-    if not show_id or not str(show_id).isdigit():
+    # Ensure show_id is a positive integer
+    try:
+        show_id_int = int(show_id)
+        if show_id_int <= 0:
+            raise ValueError
+    except Exception:
         raise ValueError(f"Invalid TMDB show_id: {show_id!r}")
+    cache_file = CACHE_DIR / f"show_{show_id_int}_season_{season_num}.json"
+    url = f'https://api.themoviedb.org/3/tv/{show_id_int}/season/{season_num}'
     cache_file = CACHE_DIR / f"show_{show_id}_season_{season_num}.json"
     url = f'https://api.themoviedb.org/3/tv/{show_id}/season/{season_num}'
     
