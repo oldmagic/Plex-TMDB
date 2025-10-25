@@ -160,8 +160,15 @@ def get_tmdb_season_episodes_data(show_id, season_num):
 
 def get_tmdb_show_info(show_id):
     """Get basic show info from TMDB with caching"""
-    cache_file = CACHE_DIR / f"show_{show_id}.json"
-    url = f'https://api.themoviedb.org/3/tv/{show_id}'
+    # Validate show_id is a positive integer
+    try:
+        sid = int(show_id)
+        if sid <= 0:
+            return None
+    except (ValueError, TypeError):
+        return None
+    cache_file = CACHE_DIR / f"show_{sid}.json"
+    url = f'https://api.themoviedb.org/3/tv/{sid}'
     
     return get_cached_response(
         cache_file,
