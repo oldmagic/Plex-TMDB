@@ -1577,7 +1577,7 @@ def parse_show_title_and_year(title):
         return clean_title, year
     
     # Check for year at end without parentheses: "Title YYYY"
-    year_space_match = re.search(r'[ \t]+(\d{4})$', title)
+    year_space_match = re.search(r'(?<!\S)(\d{4})$', title)
     if year_space_match:
         year = int(year_space_match.group(1))
         clean_title = title[:year_space_match.start()].strip()
