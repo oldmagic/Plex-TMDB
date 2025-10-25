@@ -883,8 +883,8 @@ def database_stats():
         return jsonify({"success": True, "stats": stats})
         
     except Exception as e:
-        logger.error(f"Error getting database stats: {e}")
-        return jsonify({"success": False, "message": str(e)})
+        logger.error(f"Error getting database stats: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An internal error has occurred. Please check server logs."})
 
 @app.route('/api/clear_database', methods=['POST'])
 def clear_database():
