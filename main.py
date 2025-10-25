@@ -126,7 +126,13 @@ def get_tmdb_show_id(show_name):
     if results:
         for result in results:
             if result['name'] == unquoted_clear_name:
-                return result['id']
+                show_id = result.get('id')
+                if show_id is not None and str(show_id).isdigit():
+                    return show_id
+                else:
+                    # Unexpected value in cache: log and skip
+                    print(f"{Fore.RED}Invalid TMDb show_id '{show_id}' encountered in cache for '{unquoted_clear_name}'{Style.RESET_ALL}")
+                    return None
         # No exact match, fallback to None (do not accept arbitrary first result)
         return None
 
