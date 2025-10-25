@@ -131,8 +131,8 @@ def get_tmdb_show_id(show_name):
                     show_id_int = int(show_id)
                     if show_id_int > 0:
                         return show_id_int
-                except Exception:
-                    pass
+                except (ValueError, TypeError) as e:
+                    print(f"{Fore.RED}Exception converting TMDb show_id '{show_id}' to int for '{unquoted_clear_name}': {e}{Style.RESET_ALL}")
                 # Unexpected value in cache: log and skip
                 print(f"{Fore.RED}Invalid TMDb show_id '{show_id}' encountered in cache for '{unquoted_clear_name}'{Style.RESET_ALL}")
                 return None
