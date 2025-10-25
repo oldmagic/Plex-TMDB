@@ -834,7 +834,7 @@ def cleanup_orphaned_records():
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error cleaning up orphaned records: {e}")
-        return jsonify({"success": False, "message": str(e)})
+        return jsonify({"success": False, "message": "An internal error has occurred. Please check server logs."})
 
 @app.route('/api/task_status')
 def get_task_status():
