@@ -909,8 +909,8 @@ def clear_database():
         
     except Exception as e:
         db.session.rollback()
-        logger.error(f"Error clearing database: {e}")
-        return jsonify({"success": False, "message": str(e)})
+        logger.error(f"Error clearing database: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An internal error has occurred. Please check server logs."})
 
 @app.route('/api/debug_plex_libraries', methods=['POST'])
 def debug_plex_libraries():
