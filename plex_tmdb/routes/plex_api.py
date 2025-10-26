@@ -152,7 +152,7 @@ def get_plex_libraries():
         return jsonify(
             {
                 "success": False,
-                "message": f"Error connecting to Plex: {exc}",
+                "message": "Error connecting to Plex. Please check server logs for details.",
                 "friendlyName": "Connection failed",
                 "version": "Unknown",
                 "libraries": [],
