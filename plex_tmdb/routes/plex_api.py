@@ -69,8 +69,8 @@ def test_plex_connection():
         current_app.logger.error("Plex connection request error: %s", exc)
         return jsonify({"success": False, "message": "An internal error has occurred. Please check server logs."})
     except Exception as exc:  # pylint: disable=broad-except
-        current_app.logger.error("Plex connection test failed: %s", exc)
-        return jsonify({"success": False, "message": f"Connection failed: {exc}"})
+        current_app.logger.exception("Plex connection test failed")
+        return jsonify({"success": False, "message": "Connection failed. Please check server logs for details."})
 
 
 @plex_bp.route("/get_plex_libraries", methods=["POST"])
