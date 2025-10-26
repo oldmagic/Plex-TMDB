@@ -178,7 +178,6 @@ def _test_tmdb(api_key: str, language: str) -> dict:
             "message": f"TMDB API error: {configuration.status_code}",
         }
     except requests.RequestException as exc:
-        from flask import current_app
         current_app.logger.error("TMDB connection failed: %s", exc)
         return {
             "success": False,
