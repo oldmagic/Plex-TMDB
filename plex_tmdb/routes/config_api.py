@@ -114,7 +114,6 @@ def _test_plex(plex_url: str, plex_token: str) -> dict:
         return {"success": False, "message": "Invalid Plex token"}
     except BadRequest as exc:
         # Log internal error but do not expose details to the client
-        from flask import current_app
         current_app.logger.error("Plex BadRequest exception: %s", exc)
         return {"success": False, "message": "Failed to connect to Plex server (invalid parameters or server error)"}
     except Exception as exc:  # pylint: disable=broad-except
