@@ -113,9 +113,13 @@ def _test_plex(plex_url: str, plex_token: str) -> dict:
     except Unauthorized:
         return {"success": False, "message": "Invalid Plex token"}
     except BadRequest as exc:
-        return {"success": False, "message": str(exc)}
+        # Log internal error but do not expose details to the client
+        current_app.logger.error("Plex BadRequest exception: %s", exc)
+        return {"success": False, "message": "Failed to connect to Plex server (invalid parameters or server error)"}
     except Exception as exc:  # pylint: disable=broad-except
-        return {"success": False, "message": f"Connection failed: {exc}"}
+        from flask import current_app
+        current_app.logger.error("Unexpected error in _test_plex: %s", exc)
+        return {"success": False, "message": "An internal error has occurred. Please check server logs."}
 
 
 def _test_tmdb(api_key: str, language: str) -> dict:
