@@ -181,5 +181,5 @@ def _test_tmdb(api_key: str, language: str) -> dict:
         current_app.logger.error("TMDB connection failed: %s", exc)
         return {
             "success": False,
-            "message": "Failed to connect to TMDB API. Please check server logs.",
+            "message": "Failed to connect to TMDB API. Please check server logs",
         }
