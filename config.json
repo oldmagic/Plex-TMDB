@@ -1,2 +1,10 @@
 {
+  "plexUrl": "https://192-168-1-3.23c94b471265470e97fd55be3ecb8c64.plex.direct:32400/",
+  "plexToken": "ad2Wvk2CKab4Xy_ZnXnK",
+  "tmdbApiKey": "4dc11800e29fb8b6f3fd11bb55838e17",
+  "tmdbLanguage": "en-US",
+  "updatePosters": false,
+  "updateBackdrops": false,
+  "updateMetadata": false,
+  "updateRatings": false
 }
