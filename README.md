@@ -43,6 +43,28 @@ A web-based Python application that scans your Plex library for missing episodes
 
 ---
 
+## Docker
+
+1. **Build the image**
+   ```sh
+   docker build -t plex-tmdb .
+   ```
+
+2. **Run the container**
+   Mount your configuration files so settings persist between runs.
+   ```sh
+   docker run -it --rm -p 5000:5000 \
+     -v $(pwd)/config.json:/app/config.json \
+     -v $(pwd)/filters.json:/app/filters.json \
+     -v $(pwd)/instance:/app/instance \
+     plex-tmdb
+   ```
+
+   - The web UI is available at [http://localhost:5000](http://localhost:5000).
+   - Mount additional paths (logs, custom data) as needed using extra `-v` flags.
+
+---
+
 ## Configuration (Step-by-Step)
 
 1. **Start the Web UI**
