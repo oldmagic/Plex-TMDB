@@ -67,10 +67,10 @@ def test_plex_connection():
         return jsonify({"success": False, "message": "Invalid Plex token"})
     except (BadRequest, NotFound) as exc:
         current_app.logger.error("Plex connection request error: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Plex connection test failed: %s", exc)
-        return jsonify({"success": False, "message": f"Connection failed: {exc}"})
+        return jsonify({"success": False, "message": "Connection failed"})
 
 
 @plex_bp.route("/get_plex_libraries", methods=["POST"])
@@ -152,7 +152,7 @@ def get_plex_libraries():
         return jsonify(
             {
                 "success": False,
-                "message": f"Error connecting to Plex: {exc}",
+                "message": "An error occurred while connecting to Plex.",
                 "friendlyName": "Connection failed",
                 "version": "Unknown",
                 "libraries": [],

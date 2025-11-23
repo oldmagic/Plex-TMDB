@@ -31,7 +31,7 @@ def save_config():
         return jsonify({"success": True, "message": "Configuration saved successfully"})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Error saving configuration: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
 
 
 @config_bp.route("/load_config")
@@ -44,7 +44,7 @@ def load_config():
         return jsonify({"success": True, "config": {}})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Error loading configuration: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
 
 
 @config_bp.route("/test_connections", methods=["POST"])
@@ -80,7 +80,7 @@ def test_connections():
         )
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Combined connection test failed: %s", exc)
-        return jsonify({"success": False, "message": str(exc)}), 500
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
 
 def _test_plex(plex_url: str, plex_token: str) -> dict:

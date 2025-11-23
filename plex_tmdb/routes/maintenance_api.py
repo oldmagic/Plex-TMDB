@@ -36,7 +36,7 @@ def shows_without_episodes():
         return jsonify({"success": True, "shows": payload, "total_count": len(payload)})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Error getting shows without episodes: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
 
 
 @maintenance_bp.route("/shows_with_incomplete_episodes")
@@ -96,7 +96,7 @@ def shows_with_incomplete_episodes():
         return jsonify({"success": True, "shows": incomplete_data, "total_count": len(incomplete_data)})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Error getting shows with incomplete episodes: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
 
 
 @maintenance_bp.route("/cleanup_duplicate_shows", methods=["POST"])
@@ -178,7 +178,7 @@ def cleanup_duplicate_shows():
     except Exception as exc:  # pylint: disable=broad-except
         db.session.rollback()
         current_app.logger.error("Error cleaning up duplicate shows: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
 
 
 @maintenance_bp.route("/cleanup_orphaned_records", methods=["POST"])
@@ -211,4 +211,4 @@ def cleanup_orphaned_records():
     except Exception as exc:  # pylint: disable=broad-except
         db.session.rollback()
         current_app.logger.error("Error cleaning up orphaned records: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})

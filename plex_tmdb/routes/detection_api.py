@@ -40,7 +40,7 @@ def find_missing_episodes():
         db.session.rollback()
         state.stop_task(f"Error: {exc}")
         current_app.logger.error("Error starting detection: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
 
 
 @detection_bp.route("/get_missing_episodes")
@@ -103,7 +103,7 @@ def get_missing_episodes():
         )
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Error getting missing episodes: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
 
 
 @detection_bp.route("/reprocess_show", methods=["POST"])
@@ -140,7 +140,7 @@ def reprocess_show():
     except Exception as exc:  # pylint: disable=broad-except
         db.session.rollback()
         current_app.logger.error("Error reprocessing show: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})
 
 
 @detection_bp.route("/reprocess_shows_with_progress", methods=["POST"])
@@ -166,4 +166,4 @@ def reprocess_shows_with_progress():
     except Exception as exc:  # pylint: disable=broad-except
         state.stop_task(str(exc))
         current_app.logger.error("Error starting reprocessing: %s", exc)
-        return jsonify({"success": False, "message": str(exc)})
+        return jsonify({"success": False, "message": "Failed to connect to Plex server."})

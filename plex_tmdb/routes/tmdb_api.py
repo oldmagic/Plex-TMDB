@@ -45,7 +45,7 @@ def test_tmdb_connection():
         )
     except requests.RequestException as exc:
         current_app.logger.error("TMDB connection test failed: %s", exc)
-        return jsonify({"success": False, "message": f"Connection failed: {exc}"})
+        return jsonify({"success": False, "message": "Connection failed"})
 
 
 @tmdb_bp.route("/test_tmdb_search", methods=["POST"])
@@ -89,7 +89,7 @@ def test_tmdb_search():
         )
     except requests.RequestException as exc:
         current_app.logger.error("TMDB search test failed: %s", exc)
-        return jsonify({"success": False, "message": f"Search test failed: {exc}"})
+        return jsonify({"success": False, "message": "Search test failed"})
 
 
 @tmdb_bp.route("/test_improved_tmdb_search", methods=["POST"])
@@ -144,4 +144,4 @@ def test_improved_tmdb_search():
         return jsonify({"success": False, "message": f"No results found for '{title}'"})
     except Exception as exc:  # pylint: disable=broad-except
         current_app.logger.error("Improved TMDB search test failed: %s", exc)
-        return jsonify({"success": False, "message": str(exc)}), 500
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
