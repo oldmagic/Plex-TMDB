@@ -11,7 +11,7 @@ PlexAPI==4.15.4
 
 # HTTP requests and API calls
 requests==2.32.4
-urllib3==2.6.0
+urllib3==2.6.3
 
 # Image processing (for poster/backdrop handling)
 Pillow==11.3.0
