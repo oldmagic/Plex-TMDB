@@ -10,17 +10,17 @@ Flask-SQLAlchemy==3.0.5
 PlexAPI==4.15.4
 
 # HTTP requests and API calls
-requests==2.32.4
-urllib3==2.6.3
+requests==2.33.0
+urllib3==2.7.0
 
 # Image processing (for poster/backdrop handling)
-Pillow==11.3.0
+Pillow==12.2.0
 
 # Date and time handling
 python-dateutil==2.8.2
 
 # Configuration and environment
-python-dotenv==1.0.0
+python-dotenv==1.2.2
 
 # Console output and logging
 colorama==0.4.6
@@ -54,7 +54,7 @@ alive-progress==3.1.5
 loguru==0.7.2
 
 # Development and testing dependencies (optional)
-pytest==7.4.3
+pytest==9.0.3
 pytest-cov==4.1.0
-black==25.1.0
+black==26.3.1
 flake8==6.1.0
