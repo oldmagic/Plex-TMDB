@@ -9,7 +9,7 @@ from flask import Blueprint, current_app, jsonify, request
 from models import DetectionRun, Episode, MissingEpisode, Show, db
 
 from .. import state
-from ..tasks.detection import run_missing_episodes_task, run_reprocessing_task
+from ..tasks.detection import run_missing_episodes_task, run_reprocessing_task, run_xdcc_refresh_task
 
 
 detection_bp = Blueprint("detection_api", __name__, url_prefix="/api")
@@ -41,6 +41,23 @@ def find_missing_episodes():
         state.stop_task(f"Error: {exc}")
         current_app.logger.error("Error starting detection: %s", exc)
         return jsonify({"success": False, "message": "Failed to connect to Plex server."})
+
+
+@detection_bp.route("/refresh_xdcc", methods=["POST"])
+def refresh_xdcc():
+    if not state.start_task("Starting XDCC refresh..."):
+        return jsonify({"success": False, "message": "Another task is already running"})
+
+    try:
+        run_xdcc_refresh_task()
+        return jsonify({
+            "success": True,
+            "message": "XDCC refresh started",
+        })
+    except Exception as exc:  # pylint: disable=broad-except
+        state.stop_task(str(exc))
+        current_app.logger.error("Error starting XDCC refresh: %s", exc)
+        return jsonify({"success": False, "message": "Failed to start XDCC refresh."})
 
 
 @detection_bp.route("/get_missing_episodes")
