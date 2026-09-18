@@ -88,10 +88,12 @@ def search_missing_episode(
     show_title: str,
     season_number: int,
     episode_number: int,
-    limit: int = 20,
+    limit: int = 200,
 ) -> List[Dict[str, Any]]:
-    """Find current XDCC packs matching one specific TV episode.
+    """Find all XDCC packs matching one specific TV episode.
 
+    The xdcc.info search endpoint is paginated with a maximum page size of 200.
+    Fetch every page so the database contains the complete result set.
     Results are cached briefly because xdcc.info rate-limits the public API.
     """
     if not show_title or season_number < 0 or episode_number < 0:
@@ -106,42 +108,63 @@ def search_missing_episode(
             return cached["results"]
 
     query = f"{show_title} S{season_number:02d}E{episode_number:02d}"
+    all_results: List[Dict[str, Any]] = []
+    page = 1
+    page_limit = min(max(limit, 1), 200)
 
     try:
-        response = _session.get(
-            API_URL,
-            params={
-                "q": query,
-                "category": "tv",
-                "sort": "last_seen",
-                "sortDir": "desc",
-                "limit": min(max(limit, 1), 200),
-            },
-            timeout=15,
-        )
-
-        if response.status_code != 200:
-            logger.warning(
-                "XDCC search failed for '%s' with status %s",
-                query,
-                response.status_code,
+        while True:
+            response = _session.get(
+                API_URL,
+                params={
+                    "q": query,
+                    "category": "tv",
+                    "sort": "last_seen",
+                    "sortDir": "desc",
+                    "page": page,
+                    "limit": page_limit,
+                },
+                timeout=15,
             )
-            return []
 
-        payload = response.json()
-        raw_results = payload.get("results", []) if isinstance(payload, dict) else []
-        results = [
-            _normalise_result(item)
-            for item in raw_results
-            if isinstance(item, dict)
-        ]
+            if response.status_code != 200:
+                logger.warning(
+                    "XDCC search failed for '%s' page %s with status %s",
+                    query,
+                    page,
+                    response.status_code,
+                )
+                return all_results
+
+            payload = response.json()
+            raw_results = payload.get("results", []) if isinstance(payload, dict) else []
+            page_results = [
+                _normalise_result(item)
+                for item in raw_results
+                if isinstance(item, dict)
+            ]
+            all_results.extend(page_results)
+
+            total = payload.get("total") if isinstance(payload, dict) else None
+            if not page_results or (
+                isinstance(total, int) and len(all_results) >= total
+            ):
+                break
+
+            page += 1
+            time.sleep(0.1)
 
         with _cache_lock:
-            _cache[key] = {"time": now, "results": results}
+            _cache[key] = {"time": time.monotonic(), "results": all_results}
 
-        logger.info("XDCC search for '%s' returned %s results", query, len(results))
-        return results
+        logger.info(
+            "XDCC search for '%s' returned %s results across %s page(s)",
+            query,
+            len(all_results),
+            page,
+        )
+        return all_results
 
     except (requests.RequestException, ValueError) as exc:
         logger.warning("XDCC search error for '%s': %s", query, exc)
-        return []
+        return all_results

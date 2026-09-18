@@ -15,7 +15,7 @@ from flask import current_app
 from plexapi.exceptions import BadRequest, NotFound, Unauthorized
 from plexapi.server import PlexServer
 
-from models import DetectionRun, Episode, MissingEpisode, Show, db
+from models import DetectionRun, Episode, MissingEpisode, Show, XDCCResult, db
 
 from .. import state
 from ..services.xdcc import search_missing_episode
@@ -434,6 +434,45 @@ def _find_missing_episodes_for_show(
                 plex_library_name=plex_library_name,
             )
             db.session.add(missing_entry)
+            db.session.flush()
+
+            xdcc_results = search_missing_episode(
+                existing_show.title,
+                db_episode.season_number,
+                db_episode.episode_number,
+            )
+
+            for xdcc_result in xdcc_results:
+                db.session.add(
+                    XDCCResult(
+                        missing_episode_id=missing_entry.id,
+                        detection_run_id=detection_run_id,
+                        xdcc_id=xdcc_result.get("id"),
+                        pack_num=xdcc_result.get("pack_num"),
+                        filename=xdcc_result.get("filename"),
+                        filesize=xdcc_result.get("filesize"),
+                        filesize_fmt=xdcc_result.get("filesize_fmt"),
+                        gets=xdcc_result.get("gets"),
+                        bot=xdcc_result.get("bot"),
+                        bot_channel=xdcc_result.get("bot_channel"),
+                        network=xdcc_result.get("network"),
+                        network_address=xdcc_result.get("network_address"),
+                        last_seen=xdcc_result.get("last_seen"),
+                        category=xdcc_result.get("category"),
+                        quality=xdcc_result.get("quality"),
+                        source=xdcc_result.get("source"),
+                        xdcc_command=xdcc_result.get("xdcc_command"),
+                        raw_data=json.dumps(xdcc_result, ensure_ascii=False),
+                    )
+                )
+
+            logger.info(
+                "Saved %s XDCC results for %s S%02dE%02d",
+                len(xdcc_results),
+                existing_show.title,
+                db_episode.season_number,
+                db_episode.episode_number,
+            )
 
             missing_episodes.append(
                 {
@@ -449,11 +488,7 @@ def _find_missing_episodes_for_show(
                     "still_path": db_episode.still_path,
                     "vote_average": db_episode.vote_average or 0,
                     "show_poster_path": existing_show.poster_path,
-                    "xdcc_results": search_missing_episode(
-                        existing_show.title,
-                        db_episode.season_number,
-                        db_episode.episode_number,
-                    ),
+                    "xdcc_results": xdcc_results,
                 }
             )
 
