@@ -9,7 +9,6 @@ from flask import Blueprint, current_app, jsonify, request
 from models import DetectionRun, Episode, MissingEpisode, Show, db
 
 from .. import state
-from ..services.xdcc import get_cached_missing_episode
 from ..tasks.detection import run_missing_episodes_task, run_reprocessing_task
 
 
@@ -88,11 +87,7 @@ def get_missing_episodes():
                     "still_path": episode.still_path,
                     "vote_average": episode.vote_average or 0,
                     "show_poster_path": show.poster_path,
-                    "xdcc_results": get_cached_missing_episode(
-                        show.title,
-                        episode.season_number,
-                        episode.episode_number,
-                    ),
+                    "xdcc_results": [result.to_dict() for result in missing_ep.xdcc_results],
                     "detected_at": missing_ep.detected_at.isoformat()
                     if missing_ep.detected_at
                     else None,
