@@ -66,6 +66,24 @@ def _normalise_result(result: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def get_cached_missing_episode(
+    show_title: str,
+    season_number: int,
+    episode_number: int,
+) -> List[Dict[str, Any]]:
+    """Return cached XDCC results without making a network request."""
+    if not show_title or season_number < 0 or episode_number < 0:
+        return []
+
+    key = _cache_key(show_title, season_number, episode_number)
+    now = time.monotonic()
+    with _cache_lock:
+        cached = _cache.get(key)
+        if cached and now - cached["time"] < CACHE_TTL_SECONDS:
+            return cached["results"]
+    return []
+
+
 def search_missing_episode(
     show_title: str,
     season_number: int,
