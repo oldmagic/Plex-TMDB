@@ -771,6 +771,9 @@ $(document).ready(function() {
             const show = showsWithMissing[showTitle];
             const showId = `show-${show.tmdb_show_id}`;
             const collapseId = `collapse-${show.tmdb_show_id}`;
+            const xdccCount = show.episodes.reduce((total, episode) => {
+                return total + (Array.isArray(episode.xdcc_results) ? episode.xdcc_results.length : 0);
+            }, 0);
             const posterUrl = show.poster_path ? 
                 `https://image.tmdb.org/t/p/w300${show.poster_path}` : null;
             
@@ -797,6 +800,9 @@ $(document).ready(function() {
                                 <p class="text-muted mb-2">
                                     <i class="fas fa-exclamation-triangle me-1"></i>
                                     ${show.episodes.length} missing episode${show.episodes.length > 1 ? 's' : ''}
+                                    <span class="mx-1">·</span>
+                                    <i class="fas fa-download me-1"></i>
+                                    ${xdccCount} XDCC${xdccCount === 1 ? '' : 's'} available
                                 </p>
                                 <div class="d-flex gap-2 flex-wrap">
                                     ${getSeasonBadges(show.episodes)}
