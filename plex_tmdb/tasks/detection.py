@@ -69,6 +69,126 @@ def run_reprocessing_task(show_titles: Iterable[Dict[str, Optional[str]]]) -> No
     thread.start()
 
 
+def run_xdcc_refresh_task() -> None:
+    """Refresh XDCC data for all missing episodes from the latest completed scan."""
+    app = current_app._get_current_object()
+    thread = threading.Thread(
+        target=_xdcc_refresh_worker,
+        args=(app,),
+        daemon=True,
+    )
+    thread.start()
+
+
+def _xdcc_refresh_worker(app) -> None:
+    with app.app_context():
+        try:
+            latest_run = (
+                DetectionRun.query.filter_by(status="completed")
+                .order_by(DetectionRun.completed_at.desc())
+                .first()
+            )
+            if not latest_run:
+                state.stop_task("No completed detection exists to refresh XDCC data")
+                return
+
+            missing_episodes = MissingEpisode.query.filter_by(
+                detection_run_id=latest_run.id
+            ).all()
+
+            total = len(missing_episodes)
+            if total == 0:
+                state.update_task_status(
+                    progress=100,
+                    message="No missing episodes found. Nothing to update.",
+                    results={"xdcc_updated": 0, "xdcc_results": 0},
+                )
+                return
+
+            total_results = 0
+            updated = 0
+
+            for index, missing_ep in enumerate(missing_episodes, start=1):
+                if not state.is_task_running():
+                    return
+
+                episode = missing_ep.episode
+                show = missing_ep.show
+                if not episode or not show:
+                    continue
+
+                progress = int(((index - 1) / total) * 100)
+                state.update_task_status(
+                    progress=progress,
+                    message=(
+                        f"Updating XDCC {index}/{total}: "
+                        f"{show.title} S{episode.season_number:02d}E{episode.episode_number:02d}"
+                    ),
+                )
+
+                results = search_missing_episode(
+                    show.title,
+                    episode.season_number,
+                    episode.episode_number,
+                )
+
+                XDCCResult.query.filter_by(
+                    missing_episode_id=missing_ep.id
+                ).delete(synchronize_session=False)
+
+                for result in results:
+                    db.session.add(
+                        XDCCResult(
+                            missing_episode_id=missing_ep.id,
+                            detection_run_id=latest_run.id,
+                            xdcc_id=result.get("id"),
+                            pack_num=result.get("pack_num"),
+                            filename=result.get("filename"),
+                            filesize=result.get("filesize"),
+                            filesize_fmt=result.get("filesize_fmt"),
+                            gets=result.get("gets"),
+                            bot=result.get("bot"),
+                            bot_channel=result.get("bot_channel"),
+                            network=result.get("network"),
+                            network_address=result.get("network_address"),
+                            last_seen=result.get("last_seen"),
+                            category=result.get("category"),
+                            quality=result.get("quality"),
+                            source=result.get("source"),
+                            xdcc_command=result.get("xdcc_command"),
+                            raw_data=json.dumps(result, ensure_ascii=False),
+                        )
+                    )
+
+                db.session.commit()
+                total_results += len(results)
+                updated += 1
+
+            state.update_task_status(
+                progress=100,
+                message=(
+                    f"XDCC refresh completed. Updated {updated} missing episodes "
+                    f"with {total_results} XDCC results."
+                ),
+                results={
+                    "xdcc_updated": updated,
+                    "xdcc_results": total_results,
+                    "detection_run_id": latest_run.id,
+                },
+            )
+            logger.info(
+                "XDCC refresh finished. Updated %s missing episodes with %s results.",
+                updated,
+                total_results,
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            db.session.rollback()
+            state.stop_task(f"XDCC refresh failed: {exc}")
+            logger.exception("XDCC refresh task error")
+        finally:
+            state.update_task_status(running=False)
+
+
 def _missing_episodes_worker(app, options: Dict[str, str], detection_run_id: int) -> None:  # type: ignore[annotation-unchecked]
     with app.app_context():
         detection_run = DetectionRun.query.get(detection_run_id)

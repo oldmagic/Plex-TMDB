@@ -40,6 +40,9 @@
                         <button type="button" class="btn btn-outline-info" id="refreshLibrariesBtn">
                             <i class="fas fa-refresh me-2"></i>Refresh Libraries
                         </button>
+                        <button type="button" class="btn btn-outline-primary" id="refreshXdccBtn">
+                            <i class="fas fa-download me-2"></i>Update XDCC Data
+                        </button>
                         <button type="button" class="btn btn-outline-info" id="testTmdbSearchBtn">
                             <i class="fas fa-search me-2"></i>Test TMDB Search
                         </button>
@@ -362,6 +365,10 @@ $(document).ready(function() {
     $('#refreshLibrariesBtn').on('click', function() {
         loadTVLibraries();
     });
+
+    $('#refreshXdccBtn').on('click', function() {
+        startXdccRefresh();
+    });
     
     $('#clearLogBtn').on('click', function() {
         $('#recentActivity').html('<div class="text-muted">Activity log cleared</div>');
@@ -407,6 +414,41 @@ $(document).ready(function() {
         }
     });
     
+    function startXdccRefresh() {
+        if (!confirm('This will update XDCC data for all missing episodes from the latest scan. Plex and TMDB data will not be rescanned. Continue?')) {
+            return;
+        }
+
+        setButtonLoading('#refreshXdccBtn', true);
+
+        $.ajax({
+            url: '/api/refresh_xdcc',
+            method: 'POST',
+            success: function(response) {
+                setButtonLoading('#refreshXdccBtn', false);
+
+                if (response.success) {
+                    $('#startDetectionBtn').hide();
+                    $('#stopDetectionBtn').show();
+                    $('.progress-container').slideDown();
+                    statusCheckInterval = setInterval(checkTaskStatus, 1000);
+
+                    addActivity('XDCC data refresh started');
+                    showAlert('XDCC data refresh started!', 'success');
+                } else {
+                    showAlert('Error starting XDCC refresh: ' + response.message, 'danger');
+                    addActivity('XDCC refresh start failed: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                setButtonLoading('#refreshXdccBtn', false);
+                const errorMsg = xhr.responseJSON?.message || 'Unknown error';
+                showAlert('Error starting XDCC refresh: ' + errorMsg, 'danger');
+                addActivity('XDCC refresh error: ' + errorMsg);
+            }
+        });
+    }
+
     function startMissingEpisodesDetection() {
         const formData = {
             library: $('#library').val(),
@@ -515,11 +557,18 @@ $(document).ready(function() {
                                 resetReprocessingUI();
                             }, 3000);
                         } else {
-                            // This was missing episodes detection
-                            loadMissingEpisodesResults();
-                            
-                            addActivity('Detection completed successfully');
-                            showAlert('Missing episodes detection completed!', 'success');
+                            // This can be either missing-episode detection or XDCC refresh.
+                            if (results.hasOwnProperty('xdcc_updated')) {
+                                loadMissingEpisodesResults();
+                                const message = `XDCC refresh completed! Updated ${results.xdcc_updated || 0} missing episodes with ${results.xdcc_results || 0} XDCC results`;
+                                addActivity(message);
+                                showAlert(message, 'success');
+                            } else {
+                                loadMissingEpisodesResults();
+
+                                addActivity('Detection completed successfully');
+                                showAlert('Missing episodes detection completed!', 'success');
+                            }
                             
                             // Update last detection time
                             $('#lastDetection').text(new Date().toLocaleString());
