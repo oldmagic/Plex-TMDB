@@ -18,6 +18,7 @@ from plexapi.server import PlexServer
 from models import DetectionRun, Episode, MissingEpisode, Show, db
 
 from .. import state
+from ..services.xdcc import search_missing_episode
 from ..services.tmdb import (
     get_tmdb_season_details,
     get_tmdb_tv_details,
@@ -448,6 +449,11 @@ def _find_missing_episodes_for_show(
                     "still_path": db_episode.still_path,
                     "vote_average": db_episode.vote_average or 0,
                     "show_poster_path": existing_show.poster_path,
+                    "xdcc_results": search_missing_episode(
+                        existing_show.title,
+                        db_episode.season_number,
+                        db_episode.episode_number,
+                    ),
                 }
             )
 
