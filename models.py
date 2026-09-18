@@ -129,6 +129,65 @@ class MissingEpisode(db.Model):
             'episode': self.episode.to_dict() if self.episode else None
         }
 
+class XDCCResult(db.Model):
+    __tablename__ = 'xdcc_results'
+
+    id = db.Column(db.Integer, primary_key=True)
+    missing_episode_id = db.Column(
+        db.Integer, db.ForeignKey('missing_episodes.id'), nullable=False, index=True
+    )
+    detection_run_id = db.Column(
+        db.Integer, db.ForeignKey('detection_runs.id'), nullable=False, index=True
+    )
+    xdcc_id = db.Column(db.Integer, index=True)
+    pack_num = db.Column(db.Integer)
+    filename = db.Column(db.String(1024))
+    filesize = db.Column(db.BigInteger)
+    filesize_fmt = db.Column(db.String(100))
+    gets = db.Column(db.Integer)
+    bot = db.Column(db.String(255))
+    bot_channel = db.Column(db.String(255))
+    network = db.Column(db.String(255))
+    network_address = db.Column(db.String(255))
+    last_seen = db.Column(db.String(100))
+    category = db.Column(db.String(50))
+    quality = db.Column(db.String(100))
+    source = db.Column(db.String(255))
+    xdcc_command = db.Column(db.String(1024))
+    raw_data = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    missing_episode = db.relationship(
+        'MissingEpisode',
+        backref=db.backref('xdcc_results', lazy='select', cascade='all, delete-orphan'),
+    )
+    detection_run = db.relationship('DetectionRun', backref='xdcc_results')
+
+    __table_args__ = (
+        db.Index('idx_xdcc_missing_episode', 'missing_episode_id'),
+        db.Index('idx_xdcc_detection_run', 'detection_run_id'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.xdcc_id,
+            'pack_num': self.pack_num,
+            'filename': self.filename,
+            'filesize': self.filesize,
+            'filesize_fmt': self.filesize_fmt,
+            'gets': self.gets,
+            'bot': self.bot,
+            'bot_channel': self.bot_channel,
+            'network': self.network,
+            'network_address': self.network_address,
+            'last_seen': self.last_seen,
+            'category': self.category,
+            'quality': self.quality,
+            'source': self.source,
+            'xdcc_command': self.xdcc_command,
+        }
+
+
 class DetectionRun(db.Model):
     __tablename__ = 'detection_runs'
     
