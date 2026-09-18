@@ -83,6 +83,9 @@
                                 <div class="col-md-4 text-center">
                                     <h3 class="text-primary" id="totalMissingCount">0</h3>
                                     <small class="text-muted">Missing Episodes</small>
+                                    <div class="small text-info mt-1">
+                                        <i class="fas fa-download me-1"></i><span id="totalXdccCount">0</span> XDCCs available
+                                    </div>
                                 </div>
                                 <div class="col-md-4 text-center">
                                     <h3 class="text-warning" id="showsWithMissingCount">0</h3>
@@ -611,7 +614,12 @@ $(document).ready(function() {
                 !ep.vote_average || !ep.overview || !ep.episode_title
             ).map(ep => ep.show_title)).size : 0;
         
+        const totalXdcc = response.missing_episodes ? response.missing_episodes.reduce((total, ep) => {
+            return total + (Array.isArray(ep.xdcc_results) ? ep.xdcc_results.length : 0);
+        }, 0) : 0;
+
         $('#totalMissingCount').text(totalMissing);
+        $('#totalXdccCount').text(totalXdcc);
         $('#showsWithMissingCount').text(showsWithMissing);
         
         // Only add info/warning messages if this is not the initial page load
