@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 API_URL = "https://xdcc.info/api/v1/search"
 CACHE_TTL_SECONDS = 15 * 60
+MAX_PAGES = 50  # 50 pages x 200 results = 10,000 packs per episode
 _cache: Dict[str, Any] = {}
 _cache_lock = threading.Lock()
 
@@ -146,8 +147,13 @@ def search_missing_episode(
             all_results.extend(page_results)
 
             total = payload.get("total") if isinstance(payload, dict) else None
-            if not page_results or (
-                isinstance(total, int) and len(all_results) >= total
+            # Stop on an empty or short page (the last page), once the reported
+            # total is reached, or at a hard page cap in case the API ignores
+            # the page parameter and keeps returning full pages.
+            if (
+                len(raw_results) < page_limit
+                or (isinstance(total, int) and len(all_results) >= total)
+                or page >= MAX_PAGES
             ):
                 break
 
